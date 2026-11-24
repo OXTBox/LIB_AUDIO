@@ -1,0 +1,85 @@
+-- LIB_AUDIO step 2+3 (23 Nov 2026): the hidden AUDIO stack, a pool of ready players, a card per
+-- game, words read from the game's script, the fill ONE FILE PER TICK, reuse between games.
+-- No window: players have no media here, so a file "opens" when it is there. Nothing is heard.
+local tP, tN, tT, tTicks, tR, tWords, tMax
+put "/home/igame3d/projects" into tP
+start using stack (tP & "/LIB_AUDIO/livecode/lib_audio.livecodescript")
+Audio.SetRoot tP & "/LIB_AUDIO/tests/_root"
+Audio.Build empty, 100
+Audio.Open
+put ck("AUDIO is open", Audio.IsOpen(), true) & return after tLog
+put ck("and hidden", the visible of stack "AUDIO", false) & return after tLog
+put ck("pool of 100", Audio.PoolSize(), 100) & return after tLog
+put the milliseconds into tT
+Audio.Refresh tP & "/LIB_GAMES/Vibecode3D_Games"
+put the milliseconds - tT into tT
+put ck("a card per game (60+)", the number of cards of stack "AUDIO" > 60, true) & return after tLog
+put ck("cards are quick (< 1500 ms)", tT < 1500, true) & return after tLog
+put ck("a game card: words, no pool", (there is a field "Words" of card "Canyon" of stack "AUDIO") && (there is a group "Pool" of card "Canyon" of stack "AUDIO"), "true false") & return after tLog
+put ck("Canyon's names from its script", Audio.ScriptNames(tP & "/LIB_GAMES/Vibecode3D_Games/Vibecode3D_Play_Canyon.livecodescript"), "Warp" & cr & "PlayerLaser" & cr & "Enemy" & cr & "Bullet" & cr & "Explode" & cr & "PlayerCrash") & return after tLog
+-- Canyon: count the ticks; no tick may read more than one file
+Audio.Select "Canyon"
+put ck("words on its card", the number of lines of field "Words" of card "Canyon" of stack "AUDIO", 7) & return after tLog
+put ck("select returns before the files", Audio.Done(), false) & return after tLog
+put 0 into tTicks
+put 0 into tMax
+repeat until Audio.Done() or tTicks > 500
+   put Audio.DiskReads() into tR
+   Audio.StopFill
+   Audio.Fill
+   put max(tMax, Audio.DiskReads() - tR) into tMax
+   add 1 to tTicks
+end repeat
+put ck("Canyon filled", Audio.Done(), true) & return after tLog
+put ck("never 2 files in one tick", tMax, 1) & return after tLog
+put ck("27 files read (10 lasers, 5 songs ...)", Audio.DiskReads(), 27) & return after tLog
+put ck("PlayerLaser has 10 players", the number of lines of Audio.Players("PlayerLaser"), 10) & return after tLog
+put ck("Music has 5", the number of lines of Audio.Players("Music"), 5) & return after tLog
+put ck("ticks = files + folders (27 + 7, one by Select)", tTicks + 1, 34) & return after tLog
+put ck("nothing silent", Audio.Failed(), empty) & return after tLog
+try
+   Audio.Play "Explode"
+   Audio.Play "NoSuchName"
+   Audio.Music "start"
+   put "PASS play and music: no error" & return after tLog
+catch tErr
+   put "FAIL play threw: " & line 1 of tErr & return after tLog
+end try
+put ck("a song (not the theme)", Audio.Song() begins with "Music/song_", true) & return after tLog
+-- Hunter uses the same names: nothing from disk
+Audio.Select "Hunter"
+put 0 into tTicks
+repeat until Audio.Done() or tTicks > 500
+   Audio.StopFill
+   Audio.Fill
+   add 1 to tTicks
+end repeat
+put ck("Hunter filled", Audio.Done(), true) & return after tLog
+put ck("Hunter read no file again", Audio.DiskReads(), 0) & return after tLog
+-- a game's own words file, more than the pool: it grows
+put "Laser" & tab & "PlayerLaser/" & tab & 150 & tab & 50 & cr & "Ghost" & tab & "NoSuchFolder/" & tab & 1 into tWords
+create folder (tP & "/LIB_AUDIO/tests/_root/Games")
+put textEncode(tWords, "UTF-8") into URL ("binfile:" & tP & "/LIB_AUDIO/tests/_root/Games/BigTest.txt")
+Audio.Select "BigTest"
+put 0 into tTicks
+repeat until Audio.Done() or tTicks > 500
+   Audio.StopFill
+   Audio.Fill
+   add 1 to tTicks
+end repeat
+delete file (tP & "/LIB_AUDIO/tests/_root/Games/BigTest.txt")
+delete folder (tP & "/LIB_AUDIO/tests/_root/Games")
+put ck("150 copies: the pool grew", Audio.PoolSize() >= 150, true) & return after tLog
+put ck("Laser has 150 players", the number of lines of Audio.Players("Laser"), 150) & return after tLog
+put ck("a missing folder is silent, marked", Audio.Failed(), "Ghost") & return after tLog
+-- the real send loop runs by itself
+Audio.Select "Canyon"
+put 0 into tTicks
+repeat until Audio.Done() or tTicks > 400
+   wait 10 milliseconds with messages
+   add 1 to tTicks
+end repeat
+put ck("the send loop fills by itself", Audio.Done(), true) & return after tLog
+Audio.Close
+put ck("closed", there is a stack "AUDIO", false) & return after tLog
+return tLog
