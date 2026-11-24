@@ -13,8 +13,7 @@ again** (they were closed), and check that OXT-Beyond's oxt-beyond bridge answer
 | LIB_AUDIO steps 1-3: hidden AUDIO stack, pool of 100, card per game, fill one file per tick | `LIB_AUDIO` main (f4d42c5) | tested, **measured on Windows**: cards 0.67 s, choose 6 ms, 27 files in 1.9 s; step 1 sounds heard |
 | LIB_AUDIO step 4: Game Player through AUDIO | `sound-kit`: Vibecode3D 74dcc37, bridge e046f5c, LIB_DEV d7f3075 | headless tests pass; **heard on Windows 23 Nov 23:10** |
 
-Folders are left on `sound-kit` (Vibecode3D, bridge, LIB_DEV, LIB_SFX). Nothing is merged to main
-except LIB_AUDIO (new repo) and the ISSUES note in LIB_SYSTEM. Merging waits for the owner's word.
+Everything is merged to main (23 Nov night); the old `sound-kit` branches stay as history.
 
 ## Live Windows run DONE (23 Nov, 23:05-23:20, after the reboot)
 Split in five run_code pieces in OXT-Beyond; none hung. **The owner heard the sounds and the music.**
@@ -27,7 +26,9 @@ Split in five run_code pieces in OXT-Beyond; none hung. **The owner heard the so
 The earlier hang stays unexplained (probably the allow-run question hidden behind a window, or the
 stack deletes); with fresh stacks no deletes are needed. The xt3d bench (port 8770) was restarted with
 `xt3D_Raylib_Livecode_Bridge/tools/gamebench ping`.
-Next: the owner's word to merge `sound-kit`; then step 5.
+MERGED 23 Nov ~23:30 on the owner's word ("Go forward and spread the word"): `sound-kit` -> main in LIB_DEV, LIB_SFX,
+Vibecode3D, bridge (master), all pushed. LIB_AUDIO got its GPL LICENSE; its new public OXTBox repo
+waits (repo creation was blocked by a permission check; owner to allow or run it). Next: step 5.
 
 ## What step 4 does
 - `GL.Open` (LIB_DEV/livecode/game_launch) calls `GL.Audio` first: starts lib_audio, opens AUDIO
