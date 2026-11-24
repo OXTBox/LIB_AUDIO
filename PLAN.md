@@ -124,5 +124,6 @@ Nothing changes in the games: they keep calling `Sound.Play "Explode"`.
   level about to be played first.
 - Corridor Lab worked great with the sound-kit branch.
 
-Still open (my picks hold unless you say otherwise): AUDIO as its own stack file (Q1), your choices
-as text files in `Data/Sounds/Games/` (Q2), and music: shared songs unless a game names its own (Q4).
+- **Q1:** AUDIO is its own stack file ("absolutely"). **Q2:** choices as text files in
+  `Data/Sounds/Games/<Game>.txt`. **Q4:** music is shared songs; a game naming its own is an override.
+- Building started 23 Nov: step 1.
