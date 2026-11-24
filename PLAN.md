@@ -1,7 +1,7 @@
 # LIB_AUDIO: the plan
 
 Opus, 23 Nov 2026, from the owner's words after p1-09 (sound and music back). Nothing is built yet.
-**This waits for your read and your yes.**
+**This waits for your read and your yes.** Your answers of 23 Nov are in "Settled" at the end.
 
 ## Why
 Sound came back on 23 Nov (branches `sound-kit`), but the way it loads is the old one: when a game
@@ -112,3 +112,17 @@ Nothing changes in the games: they keep calling `Sound.Play "Explode"`.
    inside AUDIO.livecode (saved with the stack)? I'd do text files.
 3. **100 players**: enough? With the kit, the largest game today uses about 50 with copies.
 4. **Music** per game (each game's own songs), or one shared playlist with a game able to say otherwise?
+
+## Settled (owner, 23 Nov)
+- **Folders:** `Data/Sounds/<Category>/` is the shared kit (Laser, Explosion ... used over and over by
+  every game, to keep the project light and lean). A game with sounds of its own, kept apart for a
+  solo release, has `Data/Sounds/<Game>/<Category>/`. Its categories win over the shared ones of the same
+  name; everything else comes from the shared kit. (Today's kit folder names become the categories.)
+- **Players:** 100 is a start, not a ceiling. 100 empty players saved in a stack with one button was
+  9 KB, so the pool can be much bigger ("10000 on one card, like an iPod"). A game may have 200 sounds,
+  but not all in the same room/level: a game's words can be split by level, and the fill loads the
+  level about to be played first.
+- Corridor Lab worked great with the sound-kit branch.
+
+Still open (my picks hold unless you say otherwise): AUDIO as its own stack file (Q1), your choices
+as text files in `Data/Sounds/Games/` (Q2), and music: shared songs unless a game names its own (Q4).
