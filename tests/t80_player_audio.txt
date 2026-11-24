@@ -1,0 +1,57 @@
+-- LIB_AUDIO step 4 (23 Nov 2026): the Game Player through the hidden AUDIO stack. GL.Open opens
+-- AUDIO and chooses the game BEFORE its window; the engine's Sound.Play and music go to AUDIO.
+-- No window here: a file "opens" when it is there; nothing is heard.
+local tP, tS, tC, tN, tT
+global gNoMouse, bNoAudio
+put true into gNoMouse
+put false into bNoAudio
+put "/home/igame3d/projects" into tP
+start using stack (tP & "/LIB_AUDIO/livecode/lib_audio.livecodescript")
+Audio.SetRoot tP & "/LIB_AUDIO/tests/_root"
+start using stack (tP & "/LIB_DEV/livecode/game_launch.livecodescript")
+put the milliseconds into tT
+get GL.Open(tP, "Canyon", false)
+put the milliseconds - tT into tT
+if it is not empty then return "FAIL did not open: " & it
+put "Play Canyon" into tS
+wait 100 milliseconds with messages
+dispatch "Player.StopTimer" to stack tS
+put the long id of this card of stack tS into tC
+put ck("opens with no error", line 1 of the uLastError of stack tS, empty) & return after tLog
+put ck("AUDIO is open and hidden", Audio.IsOpen() && the visible of stack "AUDIO", "true false") & return after tLog
+put ck("the engine sees AUDIO", value("Audio.Hosted()", tC), true) & return after tLog
+put ck("no players on the game's card", there is a group "AudioPlayers" of tC, false) & return after tLog
+put ck("Engine.Has sound", value("Engine.Has(" & quote & "sound" & quote & ")", tC), true) & return after tLog
+put 0 into tN
+repeat until Audio.Done() or tN > 300
+   wait 10 milliseconds with messages
+   add 1 to tN
+end repeat
+put ck("Canyon's sounds filled", Audio.Done(), true) & return after tLog
+put ck("the music started when its songs came", Audio.Song() begins with "Music/song_", true) & return after tLog
+try
+   send "Sound.Play" && quote & "Explode" & quote to tC
+   send "Sound.Play" && quote & "NoSuchSound" & quote to tC
+   put "PASS Sound.Play through AUDIO: no error" & return after tLog
+catch tErr
+   put "FAIL Sound.Play threw: " & line 1 of tErr & return after tLog
+end try
+dispatch "Player.TogglePause" to stack tS
+put ck("pause keeps the song", Audio.Song() is not empty, true) & return after tLog
+dispatch "Player.TogglePause" to stack tS
+close stack tS
+put ck("closing the game stops the music", Audio.Song(), empty) & return after tLog
+put ck("AUDIO stays for the next game", Audio.IsOpen(), true) & return after tLog
+get GL.Open(tP, "Hunter", false)
+put "Play Hunter" into tS
+wait 100 milliseconds with messages
+dispatch "Player.StopTimer" to stack tS
+put 0 into tN
+repeat until Audio.Done() or tN > 300
+   wait 10 milliseconds with messages
+   add 1 to tN
+end repeat
+put ck("Hunter: no file read again", Audio.DiskReads(), 0) & return after tLog
+close stack tS
+Audio.Close
+return tLog
