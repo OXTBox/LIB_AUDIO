@@ -2,7 +2,7 @@
 -- AUDIO and chooses the game BEFORE its window; the engine's Sound.Play and music go to AUDIO.
 -- No window here: a file "opens" when it is there; nothing is heard.
 local tP, tS, tC, tN, tT
-global gNoMouse, bNoAudio
+global gNoMouse, bNoAudio, bPaused
 put true into gNoMouse
 put false into bNoAudio
 put "/home/igame3d/projects" into tP
@@ -36,7 +36,12 @@ try
 catch tErr
    put "FAIL Sound.Play threw: " & line 1 of tErr & return after tLog
 end try
-dispatch "Player.TogglePause" to stack tS
+dispatch "Player.BuildMenu" to stack tS
+put ck("the ... menu has Sounds...", "Sounds..." is among the lines of the text of button "PlayerMenu" of stack tS, true) & return after tLog
+dispatch "Player.MenuPick" to stack tS with "Sounds..."
+put ck("Sounds... pauses the game", bPaused, true) & return after tLog
+put ck("Sounds... shows AUDIO on Canyon", the visible of stack "AUDIO" && word 1 of field "Status" of card 1 of stack "AUDIO", "true Canyon") & return after tLog
+Audio.Hide
 put ck("pause keeps the song", Audio.Song() is not empty, true) & return after tLog
 dispatch "Player.TogglePause" to stack tS
 close stack tS

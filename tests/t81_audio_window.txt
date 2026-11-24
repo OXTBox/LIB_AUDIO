@@ -1,0 +1,86 @@
+-- LIB_AUDIO step 5 (24 Nov 2026): the AUDIO window for choosing and appointing sounds.
+-- No window here: players have no media, nothing is heard; the words, kit list, save and refill are checked.
+local tP, tN, tW, tK, tF, tWords
+put "/home/igame3d/projects" into tP
+start using stack (tP & "/LIB_AUDIO/livecode/lib_audio.livecodescript")
+Audio.SetRoot tP & "/LIB_AUDIO/tests/_root"
+if there is a folder (tP & "/LIB_AUDIO/tests/_root/Games") then delete folder (tP & "/LIB_AUDIO/tests/_root/Games")
+Audio.Build empty, 100
+Audio.Open
+Audio.Refresh tP & "/LIB_GAMES/Vibecode3D_Games"
+Audio.Select "Canyon"
+put 0 into tN
+repeat until Audio.Done() or tN > 500
+   Audio.StopFill
+   Audio.Fill
+   add 1 to tN
+end repeat
+Audio.Show
+put ck("the window shows", the visible of stack "AUDIO", true) & return after tLog
+put ck("still on card 1 (the pool's card)", the number of this card of stack "AUDIO", 1) & return after tLog
+put ck("controls made", (there is a field "Kit" of card 1 of stack "AUDIO") && (there is a player "Preview" of card 1 of stack "AUDIO") && (there is a button "Save" of card 1 of stack "AUDIO") && (there is a button "GameList" of card 1 of stack "AUDIO"), "true true true true") & return after tLog
+put ck("only on card 1", there is a group "Chooser" of card "Hunter" of stack "AUDIO", false) & return after tLog
+put ck("a second Show builds nothing twice", the number of groups of card 1 of stack "AUDIO", 3) & return after tLog
+Audio.Show
+put ck("... still 3 groups", the number of groups of card 1 of stack "AUDIO", 3) & return after tLog
+put Audio.KitLine("Explode/") into tK
+put ck("kit lists categories", tK > 0, true) & return after tLog
+put ck("and their files", char 1 to 8 of Audio.KitEntry(tK + 1), "Explode/") & return after tLog
+put ck("no Games folder in the kit", Audio.KitLine("Games/"), 0) & return after tLog
+put ck("kit headers in bold", the textStyle of line tK of field "Kit" of card 1 of stack "AUDIO", "bold") & return after tLog
+put ck("status names the game", word 1 of field "Status" of card 1 of stack "AUDIO", "Canyon") & return after tLog
+-- appoint Zap to Bullet
+put lineOffset("Bullet" & tab, field "Words" of card 1 of stack "AUDIO") into tW
+set the hilitedLine of field "Words" of card 1 of stack "AUDIO" to tW
+Audio.UIWord
+put ck("hear a word: status", field "Status" of card 1 of stack "AUDIO" contains "Bullet: Bullet/", true) & return after tLog
+Audio.UIAppoint
+put ck("appoint with no kit line: asks", field "Status" of card 1 of stack "AUDIO" contains "choose a sound", true) & return after tLog
+set the hilitedLine of field "Kit" of card 1 of stack "AUDIO" to Audio.KitLine("Zap/")
+Audio.UIAppoint
+set the itemDel to tab
+put ck("Bullet now Zap/", item 2 of line tW of field "Words" of card 1 of stack "AUDIO", "Zap/") & return after tLog
+put ck("changed, not saved", Audio.UIDirty(), true) & return after tLog
+Audio.UIVolume -10
+put ck("volume 80 -> 70", item 4 of line tW of field "Words" of card 1 of stack "AUDIO", 70) & return after tLog
+set the itemDel to comma
+put ck("still the same line chosen", Audio.UIWordLine(), tW) & return after tLog
+Audio.UIPickGame "Hunter"
+put ck("another game waits for Save/Revert", field "Status" of card 1 of stack "AUDIO" contains "Save or Revert", true) & return after tLog
+-- hear a kit file
+set the hilitedLine of field "Kit" of card 1 of stack "AUDIO" to Audio.KitLine("Explode/") + 1
+Audio.UIKitClick
+put ck("click a kit file: hear it", field "Status" of card 1 of stack "AUDIO" contains "hear: Explode/", true) & return after tLog
+-- save
+Audio.UISave
+put tP & "/LIB_AUDIO/tests/_root/Games/Canyon.txt" into tF
+put ck("saved to Games/Canyon.txt", there is a file tF, true) & return after tLog
+put textDecode(URL ("binfile:" & tF), "UTF-8") into tWords
+put ck("the file has Bullet = Zap/, 70", lineOffset("Bullet" & tab & "Zap/", tWords) > 0 and tWords contains (tab & "70"), true) & return after tLog
+put ck("not dirty after save", Audio.UIDirty(), false) & return after tLog
+put 0 into tN
+repeat until Audio.Done() or tN > 500
+   Audio.StopFill
+   Audio.Fill
+   add 1 to tN
+end repeat
+put ck("refilled", Audio.Done(), true) & return after tLog
+put ck("Bullet plays Zap now", Audio.Players("Bullet") is not empty, true) & return after tLog
+put ck("Audio.Words reads the saved file", lineOffset("Bullet" & tab & "Zap/", Audio.Words("Canyon")) > 0, true) & return after tLog
+-- revert
+set the hilitedLine of field "Words" of card 1 of stack "AUDIO" to tW
+set the hilitedLine of field "Kit" of card 1 of stack "AUDIO" to Audio.KitLine("Thud/")
+Audio.UIAppoint
+Audio.UIRevert
+set the itemDel to tab
+put ck("revert: back to Zap/", item 2 of line tW of field "Words" of card 1 of stack "AUDIO", "Zap/") & return after tLog
+set the itemDel to comma
+Audio.UIPickGame "Hunter"
+put ck("pick Hunter", word 1 of field "Status" of card 1 of stack "AUDIO", "Hunter") & return after tLog
+Audio.Hide
+put ck("Close hides", the visible of stack "AUDIO", false) & return after tLog
+put ck("AUDIO stays open for the games", Audio.IsOpen(), true) & return after tLog
+delete file tF
+delete folder (tP & "/LIB_AUDIO/tests/_root/Games")
+Audio.Close
+return tLog

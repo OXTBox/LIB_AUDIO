@@ -442,6 +442,7 @@ command Audio.ShowState
    put sGame && "|" && Audio.Progress() into field "Title" of card sGame of stack kStack
    if sFailed is not empty then put " | silent:" && line 1 to -1 of sFailed after field "Title" of card sGame of stack kStack
    set the defaultStack to tDef
+   Audio.UIStatus
 end Audio.ShowState
 
 function Audio.Done
@@ -555,8 +556,359 @@ function Audio.Song
    return sPlayerFile[sSong]
 end Audio.Song
 
--- The AUDIO window, for choosing and appointing sounds (step 5 makes it more than a list).
-command Audio.Show
+-------------------------------------------------------------------------------------------
+-- Step 5 (24 Nov 2026): the AUDIO window, for choosing and appointing sounds. Built in code on
+-- card 1 (the pool's card: AUDIO never goes to another card), so the saved AUDIO.livecode needs
+-- no new save.
+--   left:  the chosen game's words (click = hear it as the game plays it; Music: start/stop)
+--   right: the kit, Sounds/<Category>/ and its files, a game's own Sounds/<Game>/<Category>/ first
+--          (click = hear that file, click again = stop; double-click = appoint)
+--   Appoint: the selected word gets the selected kit line (a folder: its files take turns)
+--   Vol - / Vol +: 10 steps, heard at once. Save: Sounds/Games/<Game>.txt, then the fill runs
+--   again (files already in players are not read again). Revert: back to the saved words.
+
+local sKitEntries   -- [line number of field "Kit"] its entry: Category/ or Category/file.wav
+local sChanged      -- [name] true when its sound was appointed and not saved yet
+local sDirty        -- true when the words were changed and not saved
+local sPreview      -- the file in player "Preview" (Sounds-relative)
+
+command Audio.Show pGame
    if not Audio.IsOpen() then Audio.Open
+   Audio.UIBuild
+   if pGame is not empty and pGame is not sGame then
+      put false into sDirty
+      put empty into sChanged
+      Audio.Select pGame
+   end if
+   Audio.UIKit
+   Audio.UIStatus
+   set the title of stack kStack to "FOR OWNER | AUDIO: the sounds of a game (click = hear, double-click = appoint)"
    show stack kStack
 end Audio.Show
+
+command Audio.Hide
+   Audio.PreviewStop
+   if there is a stack kStack then hide stack kStack
+end Audio.Hide
+
+-- The window's controls, once. Template colours first (owner's rule), dark like the rest.
+command Audio.UIBuild
+   local tDef, tC
+   if there is not a stack kStack then exit Audio.UIBuild
+   if there is a group "Chooser" of card 1 of stack kStack then exit Audio.UIBuild
+   put the defaultStack into tDef
+   set the defaultStack to kStack
+   lock screen
+   lock messages
+   put "on mouseUp" & cr & "  #" & cr & "end mouseUp" into tC
+   set the rect of stack kStack to 200, 32, 1100, 632
+   set the rect of field "Title" of card 1 to 10, 8, 890, 34
+   set the rect of field "Words" of card 1 to 10, 64, 450, 520
+   set the tabStops of field "Words" of card 1 to 110, 340, 390
+   set the listBehavior of field "Words" of card 1 to true
+   set the script of field "Words" of card 1 to replaceText(tC, "#", "Audio.UIWord")
+   reset the templateField
+   set the textColor of the templateField to "220,220,220"
+   set the backgroundColor of the templateField to "24,24,28"
+   set the textFont of the templateField to "Courier New"
+   set the textSize of the templateField to 12
+   set the lockText of the templateField to true
+   reset the templateButton
+   set the backgroundColor of the templateButton to "60,60,72"
+   set the textColor of the templateButton to "230,230,230"
+   set the textSize of the templateButton to 12
+   reset the templateGroup
+   reset the templatePlayer
+   create group "Chooser"
+   set the backgroundBehavior of group "Chooser" to false
+   create field "WordsHead" in group "Chooser"
+   set the rect of field "WordsHead" of card 1 to 10, 40, 450, 62
+   put "Words: name, sound, copies, volume (click = hear)" into field "WordsHead" of card 1
+   create field "KitHead" in group "Chooser"
+   set the rect of field "KitHead" of card 1 to 460, 40, 890, 62
+   put "The kit (click = hear, again = stop; double-click = appoint)" into field "KitHead" of card 1
+   create field "Kit" in group "Chooser"
+   set the rect of field "Kit" of card 1 to 460, 64, 890, 520
+   set the listBehavior of field "Kit" of card 1 to true
+   set the vScrollbar of field "Kit" of card 1 to true
+   set the script of field "Kit" of card 1 to replaceText(tC, "#", "Audio.UIKitClick") & cr & "on mouseDoubleUp" & cr & "  Audio.UIAppoint" & cr & "end mouseDoubleUp"
+   create field "Status" in group "Chooser"
+   set the rect of field "Status" of card 1 to 10, 566, 890, 592
+   create player "Preview" in group "Chooser"
+   set the rect of player "Preview" of card 1 to -40, -40, -8, -8
+   set the visible of player "Preview" of card 1 to false
+   Audio.UIButton "Game...", "10,530,110,556", "Audio.UIGameMenu", tC
+   Audio.UIButton "Hear", "120,530,190,556", "Audio.UIWord", tC
+   Audio.UIButton "Vol -", "200,530,260,556", "Audio.UIVolume -10", tC
+   Audio.UIButton "Vol +", "270,530,330,556", "Audio.UIVolume 10", tC
+   Audio.UIButton "<- Appoint", "460,530,570,556", "Audio.UIAppoint", tC
+   Audio.UIButton "Revert", "690,530,780,556", "Audio.UIRevert", tC
+   Audio.UIButton "Save", "790,530,890,556", "Audio.UISave", tC
+   Audio.UIButton "Close", "790,600,890,626", "Audio.Hide", tC
+   create button "GameList" in group "Chooser"
+   set the style of button "GameList" of card 1 to "menu"
+   set the menuMode of button "GameList" of card 1 to "popup"
+   set the visible of button "GameList" of card 1 to false
+   set the script of button "GameList" of card 1 to "on menuPick pWhich" & cr & "  Audio.UIPickGame pWhich" & cr & "end menuPick"
+   reset the templateField
+   reset the templateButton
+   unlock messages
+   unlock screen
+   set the defaultStack to tDef
+end Audio.UIBuild
+
+command Audio.UIButton pName, pRect, pCall, pScript
+   create button pName in group "Chooser"
+   set the rect of button pName of card 1 to pRect
+   set the script of button pName of card 1 to replaceText(pScript, "#", pCall)
+end Audio.UIButton
+
+-- The kit list: the chosen game's own categories first, then the shared ones (not Games, not
+-- another game's folder). One folder listing each: no players, no sound files opened.
+command Audio.UIKit
+   local tRoot, tText, n, tCat, tFolders
+   if there is not a field "Kit" of card 1 of stack kStack then exit Audio.UIKit
+   put Audio.Root() into tRoot
+   put empty into sKitEntries
+   put 0 into n
+   put empty into tText
+   if sGame is not empty and there is a folder (tRoot & "/" & sGame) then
+      repeat for each line tCat in Audio.Subfolders(tRoot & "/" & sGame)
+         Audio.UIKitAdd tRoot, sGame & "/" & tCat, tText, n
+      end repeat
+   end if
+   repeat for each line tCat in Audio.Subfolders(tRoot)
+      if tCat is "Games" or there is a card tCat of stack kStack then next repeat
+      Audio.UIKitAdd tRoot, tCat, tText, n
+   end repeat
+   if tText is empty then put "(no sounds in" && tRoot & ")" & cr into tText
+   put line 1 to -1 of tText into field "Kit" of card 1 of stack kStack
+   repeat for each key n in sKitEntries
+      if char -1 of sKitEntries[n] is "/" then set the textStyle of line n of field "Kit" of card 1 of stack kStack to "bold"
+   end repeat
+end Audio.UIKit
+
+command Audio.UIKitAdd pRoot, pCat, @rText, @rN
+   local tFiles, f
+   put Audio.FolderFiles(pRoot & "/" & pCat) into tFiles
+   if tFiles is empty then exit Audio.UIKitAdd
+   add 1 to rN
+   put pCat & "/  (" & the number of lines of tFiles & ")" & cr after rText
+   put pCat & "/" into sKitEntries[rN]
+   repeat for each line f in tFiles
+      add 1 to rN
+      put "    " & f & cr after rText
+      put pCat & "/" & f into sKitEntries[rN]
+   end repeat
+end Audio.UIKitAdd
+
+function Audio.Subfolders pFolder
+   local tOld, tList, tOut, f
+   if there is not a folder pFolder then return empty
+   put the folder into tOld
+   set the folder to pFolder
+   put folders() into tList
+   set the folder to tOld
+   repeat for each line f in tList
+      if f is "." or f is ".." or f is empty then next repeat
+      put f & cr after tOut
+   end repeat
+   sort tOut
+   return line 1 to -1 of tOut
+end Audio.Subfolders
+
+-- The entry of a kit line (for tests and the window)
+function Audio.KitEntry pLine
+   return sKitEntries[pLine]
+end Audio.KitEntry
+
+function Audio.KitLine pEntry
+   repeat for each key n in sKitEntries
+      if sKitEntries[n] is pEntry then return n
+   end repeat
+   return 0
+end Audio.KitLine
+
+function Audio.UIWordLine
+   return the hilitedLine of field "Words" of card 1 of stack kStack
+end Audio.UIWordLine
+
+-- Click on a word: hear it. Appointed and not saved yet: the new sound, through Preview.
+command Audio.UIWord
+   local tLine, tName, tEntry
+   put Audio.UIWordLine() into tLine
+   if tLine is empty then
+      Audio.UIStatus "choose a word on the left"
+      exit Audio.UIWord
+   end if
+   set the itemDel to tab
+   put item 1 of line tLine of field "Words" of card 1 of stack kStack into tName
+   put item 2 of line tLine of field "Words" of card 1 of stack kStack into tEntry
+   set the itemDel to comma
+   if sChanged[tName] is true then
+      Audio.Preview tEntry
+      Audio.UIStatus tName & ": (not saved)" && tEntry
+   else if tName is "Music" then
+      if Audio.Song() is empty then Audio.Music "start"
+      else Audio.Music "stop"
+      Audio.UIStatus "Music:" && Audio.Song()
+   else
+      Audio.Play tName
+      if tEntry is empty then Audio.UIStatus tName & ": no sound yet, choose one on the right"
+      else Audio.UIStatus tName & ":" && tEntry
+   end if
+end Audio.UIWord
+
+command Audio.UIKitClick
+   local tLine
+   put the hilitedLine of field "Kit" of card 1 of stack kStack into tLine
+   if tLine is empty or sKitEntries[tLine] is empty then exit Audio.UIKitClick
+   Audio.Preview sKitEntries[tLine]
+   if sPreview is empty then Audio.UIStatus "stopped"
+   else Audio.UIStatus "hear:" && sPreview
+end Audio.UIKitClick
+
+-- Plays one file in player "Preview" (a folder: its first file). The same file again: stop.
+command Audio.Preview pEntry
+   local tFile, tFull, tFiles
+   if there is not a player "Preview" of card 1 of stack kStack then exit Audio.Preview
+   put pEntry into tFile
+   if char -1 of tFile is "/" then
+      put Audio.FolderFiles(Audio.Root() & "/" & char 1 to -2 of tFile) into tFiles
+      if tFiles is empty then exit Audio.Preview
+      put tFile & line 1 of tFiles into tFile
+   end if
+   if tFile is sPreview and not the paused of player "Preview" of card 1 of stack kStack then
+      Audio.PreviewStop
+      exit Audio.Preview
+   end if
+   Audio.PreviewStop
+   put Audio.Root() & "/" & tFile into tFull
+   set the fileName of player "Preview" of card 1 of stack kStack to tFull
+   put tFile into sPreview
+   set the playLoudness of player "Preview" of card 1 of stack kStack to 80
+   set the currentTime of player "Preview" of card 1 of stack kStack to 0
+   start player "Preview" of card 1 of stack kStack
+end Audio.Preview
+
+command Audio.PreviewStop
+   if there is a stack kStack and there is a player "Preview" of card 1 of stack kStack then stop player "Preview" of card 1 of stack kStack
+   put empty into sPreview
+end Audio.PreviewStop
+
+-- The selected word gets the selected kit line.
+command Audio.UIAppoint
+   local w, k, tLine, tEntry
+   put Audio.UIWordLine() into w
+   put the hilitedLine of field "Kit" of card 1 of stack kStack into k
+   if w is empty then
+      Audio.UIStatus "choose a word on the left first"
+      exit Audio.UIAppoint
+   end if
+   if k is empty or sKitEntries[k] is empty then
+      Audio.UIStatus "choose a sound on the right"
+      exit Audio.UIAppoint
+   end if
+   put sKitEntries[k] into tEntry
+   set the itemDel to tab
+   put line w of field "Words" of card 1 of stack kStack into tLine
+   put tEntry into item 2 of tLine
+   put tLine into line w of field "Words" of card 1 of stack kStack
+   put true into sChanged[item 1 of tLine]
+   set the itemDel to comma
+   set the hilitedLine of field "Words" of card 1 of stack kStack to w
+   put true into sDirty
+   Audio.UIStatus "appointed:" && tEntry
+end Audio.UIAppoint
+
+command Audio.UIVolume pDelta
+   local w, tLine, v, tName
+   put Audio.UIWordLine() into w
+   if w is empty then
+      Audio.UIStatus "choose a word on the left first"
+      exit Audio.UIVolume
+   end if
+   set the itemDel to tab
+   put line w of field "Words" of card 1 of stack kStack into tLine
+   put item 4 of tLine into v
+   if v is not a number then put 80 into v
+   put max(0, min(100, v + pDelta)) into v
+   put v into item 4 of tLine
+   put item 1 of tLine into tName
+   put tLine into line w of field "Words" of card 1 of stack kStack
+   set the itemDel to comma
+   put v into sVolume[tName]
+   set the hilitedLine of field "Words" of card 1 of stack kStack to w
+   put true into sDirty
+   Audio.UIWord
+   Audio.UIStatus tName && "volume" && v
+end Audio.UIVolume
+
+-- Writes Sounds/Games/<Game>.txt and fills again (music goes on if it was playing).
+command Audio.UISave
+   local tFolder, tFile, tMusic, tWords
+   if sGame is empty then exit Audio.UISave
+   put Audio.Root() & "/Games" into tFolder
+   if there is not a folder tFolder then create folder tFolder
+   put tFolder & "/" & sGame & ".txt" into tFile
+   put field "Words" of card 1 of stack kStack into tWords
+   put textEncode(line 1 to -1 of tWords & cr, "UTF-8") into URL ("binfile:" & tFile)
+   if the result is not empty then
+      Audio.UIStatus "NOT saved:" && the result
+      exit Audio.UISave
+   end if
+   put (Audio.Song() is not empty) into tMusic
+   put false into sDirty
+   put empty into sChanged
+   Audio.PreviewStop
+   Audio.Select sGame
+   if tMusic then Audio.Music "start"
+   Audio.UIStatus "saved" && tFile
+end Audio.UISave
+
+command Audio.UIRevert
+   if sGame is empty then exit Audio.UIRevert
+   put false into sDirty
+   put empty into sChanged
+   Audio.PreviewStop
+   Audio.Select sGame
+   Audio.UIStatus "back to the saved words"
+end Audio.UIRevert
+
+-- Game... : a popup of the game cards (from mouseUp: owner's rule)
+command Audio.UIGameMenu
+   local tList, i
+   repeat with i = 2 to the number of cards of stack kStack
+      put the short name of card i of stack kStack & cr after tList
+   end repeat
+   sort tList
+   put line 1 to -1 of tList into button "GameList" of card 1 of stack kStack
+   popup button "GameList" of card 1 of stack kStack
+end Audio.UIGameMenu
+
+command Audio.UIPickGame pGame
+   if sDirty is true then
+      Audio.UIStatus "Save or Revert" && sGame && "first"
+      exit Audio.UIPickGame
+   end if
+   Audio.PreviewStop
+   Audio.Select pGame
+   Audio.UIKit
+   Audio.UIStatus
+end Audio.UIPickGame
+
+function Audio.UIDirty
+   return sDirty is true
+end Audio.UIDirty
+
+command Audio.UIStatus pMsg
+   local t
+   if there is not a stack kStack or there is not a field "Status" of card 1 of stack kStack then exit Audio.UIStatus
+   put sGame into t
+   if t is empty then put "(no game chosen: Game...)" into t
+   if sDirty is true then put " (changed, not saved)" after t
+   if sQueue is not empty then put " | filled" && Audio.Progress() after t
+   if sFailed is not empty then put " | silent:" && replaceText(line 1 to -1 of sFailed, return, ", ") after t
+   if pMsg is not empty then put " | " & pMsg after t
+   put t into field "Status" of card 1 of stack kStack
+end Audio.UIStatus
