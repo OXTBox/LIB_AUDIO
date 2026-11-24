@@ -27,8 +27,8 @@ The earlier hang stays unexplained (probably the allow-run question hidden behin
 stack deletes); with fresh stacks no deletes are needed. The xt3d bench (port 8770) was restarted with
 `xt3D_Raylib_Livecode_Bridge/tools/gamebench ping`.
 MERGED 23 Nov ~23:30 on the owner's word ("Go forward and spread the word"): `sound-kit` -> main in LIB_DEV, LIB_SFX,
-Vibecode3D, bridge (master), all pushed. LIB_AUDIO got its GPL LICENSE; its new public OXTBox repo
-waits (repo creation was blocked by a permission check; owner to allow or run it). Next: step 5.
+Vibecode3D, bridge (master), all pushed. LIB_AUDIO got its GPL LICENSE; now public at
+github.com/OXTBox/LIB_AUDIO (and in get_everything). Next: step 5.
 
 ## What step 4 does
 - `GL.Open` (LIB_DEV/livecode/game_launch) calls `GL.Audio` first: starts lib_audio, opens AUDIO
