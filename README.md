@@ -21,3 +21,9 @@ Traps found:
   players sets them all up again on Windows (about 0.4 s a card).
 - OXT-Beyond keeps the first copy of a library: `start using` does not read a changed file again.
   `stop using` + `delete stack "lib_audio"` first.
+
+## Licence
+
+GPL-3.0 (see `LICENSE`), because the xTalk work here is built on the GPL-licensed LiveCode Community 9 engine. Copyright (c) 2026 xAction.
+
+The Python files (`.py`) and other material that is not xTalk are also offered under the MIT licence, Copyright (c) 2026 xAction: you may use them under either licence.
