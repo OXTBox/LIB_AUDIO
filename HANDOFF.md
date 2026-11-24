@@ -30,7 +30,16 @@ MERGED 23 Nov ~23:30 on the owner's word ("Go forward and spread the word"): `so
 Vibecode3D, bridge (master), all pushed. LIB_AUDIO got its GPL LICENSE; now public at
 github.com/OXTBox/LIB_AUDIO (and in get_everything). Next: step 5.
 
-## What step 4 does
+## Step 5 DONE (24 Nov, just after midnight): the AUDIO window, **owner tried it: "Works"**
+Branches `audio-window` (LIB_AUDIO 25dfcd1, LIB_DEV fb2dac4); waits for his word to merge.
+- `Audio.Show [game]` builds the window in code on card 1 (pool's card; the saved AUDIO.livecode
+  is untouched): words left (click = hear; Music = start/stop), kit right (Sounds/<Game>/<Cat>/ first,
+  then shared categories; click = hear in player "Preview", again = stop; double-click = appoint),
+  Game... popup (from mouseUp), Vol -/+, Revert, Save -> `Sounds/Games/<Game>.txt` then refill,
+  Close = hide (AUDIO stays for the games). Status line: game, changed, fill progress, silent names.
+- Game Player `...` > **Sounds...** (only when AUDIO runs): pauses the game, opens the window on it.
+- Tests: t81_audio_window 58 pass, t80 30, t79 50, t78 32, t77 66, t70 168 (both engines).
+
 - `GL.Open` (LIB_DEV/livecode/game_launch) calls `GL.Audio` first: starts lib_audio, opens AUDIO
   hidden (once), makes the game cards (once), `Audio.Select <game>`: the filling starts **before the
   game window is made**. A launcher may call `GL.Audio` as soon as a name is clicked.
@@ -57,8 +66,7 @@ Headless players have no media: a file "opens" when it is there. Only Windows ru
 
 ## Next steps
 1. The live Windows run (above). Owner listens.
-2. Step 5: the AUDIO window for choosing and appointing sounds: a game's words left, the kit right,
-   click to hear, click to appoint, save to `Data/Sounds/Games/<Game>.txt`.
+2. ~~Step 5~~ done 24 Nov (above).
 3. Sound.Play calls in the 59 games that have none (only Canyon and Hunter call it): one helper per
    few games; names from the kit categories (Pickup, Jump, Hit, Explode, Win, Lose ...).
 4. Words split by level (owner: a game may have 200 sounds, not all in one level).
