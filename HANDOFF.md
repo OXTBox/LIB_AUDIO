@@ -111,6 +111,6 @@ Headless players have no media: a file "opens" when it is there. Only Windows ru
 - `Audio.Seed`: the first game copies the kit into the player's Sounds folder once (never over files);
   `VL.Audio` (Library) and `CG.Audio` (Comfy) do it. Sound editor finds lib_sfx + xtsfx beside itself.
 - Tests: t85_seed (headless), t27 +1 (Library plays through the installed AUDIO), t84 47, t64, t81, t83 green.
-- **Waits:** rebuild Vibecode3D Library.exe (VL.Audio) and ComfyGames.exe (CG.Audio; re-save the stack
-  with comfy_games.livecodescript first), then `vibeinstall.py install` / `comfygames` again.
+- **DONE 24 Nov 22:55:** owner rebuilt both exes; installed on V: (Vibecode3D.exe + ComfyGames.exe new;
+  the spare `Vibecode3D Library.exe` copy was running, still 23 Nov: install again once it is closed).
 - Traps: `tExt` = text, `tHere` = there (xTalk ignores case); Windows sees kit.txt = KIT.txt.
