@@ -67,15 +67,15 @@ Headless players have no media: a file "opens" when it is there. Only Windows ru
 ## Next steps
 1. The live Windows run (above). Owner listens.
 2. ~~Step 5~~ done 24 Nov (above).
-3. ~~Sound.Play calls in the games~~ DONE 24 Nov on LIB_GAMES branch `game-sounds` (aa8b531),
-   waits for his ears and his merge word: 55 games, 7 helpers (brief `tests/GAME_SOUNDS_BRIEF.md`),
+3. ~~Sound.Play calls in the games~~ DONE 24 Nov, MERGED to LIB_GAMES main (aa8b531; owner: "Very nicely done"),
+   55 games, 7 helpers (brief `tests/GAME_SOUNDS_BRIEF.md`),
    kit names only, events only, once a frame. List per game: `GAME_SOUNDS.md`. Test
    `t82_game_sounds.txt` (copy here; run copy in OXT-BEYOND/tests): 438/440 on both engines, the 2
    = DotMazeLean needs Mesh.New in the stand-ins (failed before). Skipped: Simple_Test1/2, demo,
    uDead_CullTest. t59 Thrmnlra test now presses \ (was Tab). Kit lacks: countdown beep, gear shift,
    pool-ball clack, empty-gun click, oil spin. Face blips each sway (no other events): ask him.
    Helper trap: two helpers shared a scratchpad ed.py; give each its own folder next time.
-   Not done: LIB_COMFY/games copies; xRay plays nothing yet (step 5 below).
+   Not done: Comfy games (plan: LIB_COMFY/AUDIO_HANDOFF.md, with the Comfy rebuild); xRay plays nothing yet.
 4. Words split by level (owner: a game may have 200 sounds, not all in one level).
 5. Later: xRay plays the words through raylib's mixer; the kit into the V: install (after the
    test-subject notes); a volume knob in the Game Player.
