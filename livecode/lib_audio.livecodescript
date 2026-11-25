@@ -73,8 +73,9 @@ command Audio.Seed pFrom, pMusicFrom
    if pMusicFrom is not empty and there is a folder pMusicFrom and there is not a folder (tRoot & "/Music") then
       add Audio.SeedCopy(pMusicFrom, tRoot & "/Music") to tN
    end if
-   if there is a file (pFrom & "/kit.txt") and there is not a file (tRoot & "/kit.txt") then
-      put URL ("binfile:" & pFrom & "/kit.txt") into URL ("binfile:" & tRoot & "/kit.txt")
+   -- the sound editor's recipe (LIB_SFX/kit/kit.txt; not "kit.txt": Windows sees KIT.txt as the same file)
+   if there is a file (pFrom & "/KIT_RECIPE.txt") and there is not a file (tRoot & "/KIT_RECIPE.txt") then
+      put URL ("binfile:" & pFrom & "/KIT_RECIPE.txt") into URL ("binfile:" & tRoot & "/KIT_RECIPE.txt")
       add 1 to tN
    end if
    return tN

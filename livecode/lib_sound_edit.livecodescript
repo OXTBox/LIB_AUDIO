@@ -70,9 +70,10 @@ function SEdit.Projects
    return item 1 to -4 of tFile
 end SEdit.Projects
 
--- kit.txt (type <tab> preset <tab> seeds [<tab> overrides]): the Sounds folder's own, else LIB_SFX's
+-- the kit's recipe (type <tab> preset <tab> seeds [<tab> overrides]): the Sounds folder's KIT_RECIPE.txt
+-- (installed copies), else LIB_SFX/kit/kit.txt
 function SEdit.KitFile
-   if sRoot is not empty and there is a file (sRoot & "/kit.txt") then return sRoot & "/kit.txt"
+   if sRoot is not empty and there is a file (sRoot & "/KIT_RECIPE.txt") then return sRoot & "/KIT_RECIPE.txt"
    if there is a file (SEdit.Projects() & "/LIB_SFX/kit/kit.txt") then return SEdit.Projects() & "/LIB_SFX/kit/kit.txt"
    return empty
 end SEdit.KitFile
