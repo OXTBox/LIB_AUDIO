@@ -1,0 +1,60 @@
+# Which sounds each game plays (made from the scripts, 24 Nov 2026)
+Names are kit categories (LIB_SFX/kit/kit.txt). Change a game's choices in the Game Player: ... > Sounds...
+
+- **Amazing_Couple**: Warp Select Thud Explode Bounce Hit Pickup Win
+- **Antack**: Select Win Lose Warp Throw Bullet Hurt Explode PlayerLaser Hit
+- **AntackFresh**: Select Win Lose Warp Throw Bullet Hurt Explode PlayerLaser Hit
+- **BankShotBounce**: Hit Bounce Blip Thud Hurt Pickup Shoot Win Lose
+- **BatDuel**: Warp Throw Bounce Hit Blip Pickup Hurt Win Lose
+- **BigBallOfVectors**: Pickup Win Powerup Enemy Lose Hurt
+- **BlockCityHustle**: Warp Blip Pickup Powerup Zap Select Win Hurt PlayerCrash Lose
+- **BounceRally**: Jump Thud Win Warp Hit Explode Lose Hurt
+- **Canyon**: Warp PlayerLaser Enemy Bullet Explode PlayerCrash
+- **CityShield**: PlayerLaser Enemy Hit Explode Lose Win Warp
+- **CoastRoad**: Select Pickup Powerup Win Warp PlayerCrash Hurt
+- **ComfyPong1**: Hit Bounce Hurt Powerup Win Warp Lose
+- **ConeProbe3D**: Throw Jump Select Thud Zap Bounce Explode Win Blip Hit Pickup Hurt Lose
+- **CorridorLab**: Win Warp Blip Pickup PlayerLaser Hit Explode Hurt Lose Enemy
+- **CraterCrawler**: Jump PlayerLaser Thud Pickup Win Warp Enemy Bullet Explode Hit PlayerCrash Lose
+- **CrossTraffic**: Warp Jump Pickup Win Hurt Lose
+- **DeadDays**: Shoot Hit Explode Hurt PlayerCrash Lose Pickup Warp Win Bullet
+- **DeepDive**: Select Pickup Win Warp PlayerCrash Hurt
+- **DodgeTunnel**: Warp Zap Hurt Lose Blip Win Enemy
+- **DotMaze**: Select Pickup PlayerCrash Lose Win Warp
+- **DotMazeLean**: Select Blip PlayerCrash Hurt Win Warp
+- **EagleDive**: Warp Jump Thud Powerup Pickup Win Lose
+- **Face**: Warp Blip Select
+- **FareDash**: Hurt Blip Pickup Powerup Win Warp Lose PlayerCrash
+- **FloppyFlynn**: Warp Jump Thud Blip Powerup PlayerCrash Hurt
+- **FuelLine**: Select Lose Pickup Win Warp PlayerCrash Hurt
+- **GridSprint**: Warp Select Blip Pickup Explode Hurt Lose Powerup Win Thud
+- **Hunter**: Warp Bullet PlayerLaser Explode Enemy PlayerCrash
+- **InterceptorRun**: PlayerLaser Shoot Throw Thud Win Warp Bullet Hit Explode Powerup PlayerCrash Hurt
+- **JaiAlaiBlock**: Throw Bounce Hit Blip Pickup Win Warp Hurt Lose
+- **LanternLadders**: Jump Thud Pickup Win Warp Lose Hurt
+- **LightTrailArena**: Pickup Zap Blip PlayerCrash Explode Win Warp Lose
+- **LongWorm**: Warp Hurt Lose Pickup Win
+- **MatrixLock**: Thud Zap Win Warp Lose Hurt Select
+- **MeadowMarsh**: Warp Select Zap Shoot Hit Hurt Explode PlayerCrash Pickup Powerup Lose Win
+- **NeonDriftWastes**: Select Jump Pickup Powerup Warp PlayerCrash Hurt
+- **NineBall**: Select Thud Bounce Pickup Hit Win Hurt
+- **PhotonBall**: Warp Jump Throw Bounce Thud Blip Pickup Hurt Zap Powerup Explode PlayerCrash Lose
+- **ProbeVsCone**: Hit Throw Zap Bounce Explode Win Thud Pickup Hurt Lose
+- **PromptAndGlazeMaze**: Select Pickup Win Warp Throw Hit Zap Lose Hurt
+- **RampRider**: Warp Zap Jump Pickup Thud PlayerCrash Win Blip Lose
+- **RockField**: PlayerLaser Hit Explode PlayerCrash Lose Win Warp
+- **ShaftDescent**: Select Jump Thud Bounce Win Warp PlayerCrash Hurt
+- **SkyRaiders**: PlayerLaser Lose Hit Explode Bullet Hurt Win Warp
+- **SoftLanding**: Warp Select Thud Win Explode Lose PlayerCrash
+- **SquadBuggy**: Jump Hurt PlayerCrash Lose Shoot PlayerLaser Explode Hit Throw Powerup Win Warp
+- **StackDown**: Lose Blip Thud Pickup Win Warp
+- **TabletopRacers**: Warp PlayerCrash Hurt Thud Pickup Blip Select Lose Win
+- **Thrmnlra**: Select Hit Explode Zap Shoot Enemy
+- **TrenchRun**: Win Warp Bullet PlayerLaser Explode PlayerCrash Hurt
+- **VectorBlobApocalypse**: Warp PlayerLaser Hit Explode Hurt Lose Win
+- **VectorPong3D**: Throw Bounce Thud Hit Hurt Blip Pickup Win Warp Lose
+- **VectorToss**: Jump Throw Thud Bounce Blip Pickup Warp Explode Powerup Hurt Lose Select
+- **VineRun**: Jump Thud Blip Pickup Win Warp Hurt Lose
+- **WallBreaker**: Warp Throw Blip Bounce Hit Pickup Win Hurt Lose
+- **WreckRing**: Warp Win Hurt Thud Hit Explode PlayerCrash Powerup Pickup Lose
+- **uDead**: Warp Hit Hurt Throw Shoot Explode Select Win Lose

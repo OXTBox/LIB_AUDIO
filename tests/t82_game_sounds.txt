@@ -1,0 +1,50 @@
+-- game sounds (LIB_AUDIO next step 3): each game compiles, plays 600 frames with the engine stand-ins,
+-- calls only kit names in Sound.Play "<Name>" (literal, so AUDIO can read them), and INFO lists what it played.
+-- Helpers copy this file and change the one GAMES line.
+local tStub, tGame, tS, tErr, tText, tNames, tName, tOff, tBad, tKit, tGames
+put "Blip,Bounce,Bullet,Enemy,Explode,Hit,Hurt,Jump,Lose,Pickup,PlayerCrash,PlayerLaser,Powerup,Select,Shoot,Throw,Thud,Warp,Win,Zap" into tKit
+put "Canyon,Hunter" into tGames   -- GAMES
+put textDecode(url ("binfile:/home/igame3d/projects/LIB_GAMES/tools/engine_stubs.livecodescript"), "UTF-8") into tStub
+delete line 1 of tStub
+replace ("on Sound.Play pType" & return & "end Sound.Play") with ("on Sound.Play pType" & return & "global gT82Played" & return & "add 1 to gT82Played[pType]" & return & "end Sound.Play") in tStub
+put return & textDecode(url ("binfile:/home/igame3d/projects/LIB_ig3d/livecode/contract_aliases.livecodescript"), "UTF-8") after tStub
+global gT82Played
+repeat for each item tGame in tGames
+   put textDecode(url ("binfile:/home/igame3d/projects/LIB_GAMES/Vibecode3D_Games/Vibecode3D_Play_" & tGame & ".livecodescript"), "UTF-8") into tText
+   -- the names, the way AUDIO reads them
+   put empty into tNames
+   put empty into tBad
+   put 0 into tOff
+   repeat forever
+      put offset("Sound.Play" && quote, tText, tOff) into tName
+      if tName is 0 then exit repeat
+      add tName + 11 to tOff
+      put char tOff + 1 to tOff + 40 of tText into tName
+      put char 1 to offset(quote, tName) - 1 of tName into tName
+      if tName is not among the items of tKit then put tName & " " after tBad
+      if tName is not among the items of tNames then put tName & "," after tNames
+   end repeat
+   put ck(tGame & " has 3+ sound names", the number of items of tNames >= 3, true) & return after tLog
+   put ck(tGame & " only kit names", tBad, empty) & return after tLog
+   create stack "Snd" & tGame
+   set the script of stack ("Snd" & tGame) to tStub
+   set the script of card 1 of stack ("Snd" & tGame) to tText
+   put ck(tGame & " compiles", the result, empty) & return after tLog
+   put the long id of card 1 of stack ("Snd" & tGame) into tS
+   set the defaultStack to ("Snd" & tGame)
+   put empty into tErr
+   put empty into gT82Played
+   try
+      dispatch "Stub.NoMouse" to tS
+      dispatch "Game.OnStart" to tS
+      repeat 600
+         dispatch "Game.OnUpdate" to tS
+      end repeat
+   catch tE
+      put line 1 of tE into tErr
+   end try
+   put ck(tGame & " plays 600 frames", tErr, empty) & return after tLog
+   combine gT82Played using comma and "="
+   put "INFO " & tGame & " names: " & tNames & " | played in 600 frames: " & gT82Played & return after tLog
+end repeat
+return tLog
