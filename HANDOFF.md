@@ -31,7 +31,7 @@ Vibecode3D, bridge (master), all pushed. LIB_AUDIO got its GPL LICENSE; now publ
 github.com/OXTBox/LIB_AUDIO (and in get_everything). Next: step 5.
 
 ## Step 5 DONE (24 Nov, just after midnight): the AUDIO window, **owner tried it: "Works"**
-Branches `audio-window` (LIB_AUDIO 25dfcd1, LIB_DEV fb2dac4); waits for his word to merge.
+Branches `audio-window` (LIB_AUDIO 25dfcd1, LIB_DEV fb2dac4): on main in both and pushed (checked 24 Nov).
 - `Audio.Show [game]` builds the window in code on card 1 (pool's card; the saved AUDIO.livecode
   is untouched): words left (click = hear; Music = start/stop), kit right (Sounds/<Game>/<Cat>/ first,
   then shared categories; click = hear in player "Preview", again = stop; double-click = appoint),
