@@ -1,0 +1,110 @@
+-- LIB_AUDIO sound editor (Priority Tube a1-01, 24 Nov 2026). Needs the REAL LIB_SFX (xtsfx.dll), so it runs
+-- in Windows LiveCode through LIB_MCP:  bash LIB_AUDIO/tests/run_t84.sh
+-- Quiet: nothing is played and no window is shown (SEdit.SetQuiet true; AUDIO's window is built, not shown).
+local tLog, tP, tKit, tOut, tA, tB, tV, tWhy, tK
+put "//wsl$/Ubuntu/home/igame3d/projects" into tP
+put tP & "/LIB_SFX/kit/Sounds" into tKit
+put "C:/xtsfx/test_t84" into tOut
+if there is not a folder tOut then create folder tOut
+if there is not a folder (tOut & "/Zap") then create folder (tOut & "/Zap")
+-- the newest files, not a copy kept from an earlier run
+repeat for each item tA in "lib_sound_edit,lib_audio,AUDIO,SOUND EDIT"
+   if tA is among the lines of the stacksInUse then stop using stack tA
+   if there is a stack tA then delete stack tA
+end repeat
+start using stack (tP & "/LIB_AUDIO/livecode/lib_audio.livecodescript")
+start using stack (tP & "/LIB_AUDIO/livecode/lib_sound_edit.livecodescript")
+SEdit.SetQuiet true
+put "LIB_SFX starts: " & (SEdit.Start() is empty) && SEdit.Start() & return after tLog
+-- a kit sound opens with the kit's own numbers: the same wav, byte for byte
+SEdit.Open "Explode/Explode_42.wav", tKit, "Canyon"
+put "open kit file: " & (the result is empty) && the result & return after tLog
+put "how = kit: " & (SEdit.How() is "kit") && SEdit.How() & return after tLog
+Sfx.Export "edit", tOut & "/e42.wav", 22050, 16, 1
+put URL ("binfile:" & tOut & "/e42.wav") into tA
+put URL ("binfile:" & tKit & "/Explode/Explode_42.wav") into tB
+put "same as the kit's wav: " & (tA is tB and the length of tA > 1000) & return after tLog
+SEdit.Open "PlayerCrash/PlayerCrash_51.wav", tKit, "Canyon"
+put "kit overrides kept (decayTime 0.6): " & (abs(Sfx.Get("edit", "decayTime") - 0.6) < 0.001) && Sfx.Get("edit", "decayTime") & return after tLog
+Sfx.Export "edit", tOut & "/pc51.wav", 22050, 16, 1
+put "PlayerCrash same wav too: " & (URL ("binfile:" & tOut & "/pc51.wav") is URL ("binfile:" & tKit & "/PlayerCrash/PlayerCrash_51.wav")) & return after tLog
+SEdit.Open "Hit/", tKit, "Canyon"
+put "a folder opens its first wav: " & (SEdit.Entry() is "Hit/Hit_91.wav") && SEdit.Entry() & return after tLog
+-- some other file: a start from its folder's preset
+SEdit.Open "Hurt/my own scream.wav", tKit, "Canyon"
+put "other file: how = preset: " & (SEdit.How() is "preset") && SEdit.How() & return after tLog
+put "... Hurt's waveType 3: " & (Sfx.Get("edit", "waveType") = 3) && Sfx.Get("edit", "waveType") & return after tLog
+-- a .rfx beside the wav wins
+Sfx.Make "rfxsrc", "laser", 201
+Sfx.Set "rfxsrc", "decayTime", 0.777
+Sfx.Save "rfxsrc", tOut & "/Zap/Zap_201.rfx"
+SEdit.Open "Zap/Zap_201.wav", tOut, "Canyon"
+put "rfx beside: how = rfx: " & (SEdit.How() is "rfx") && SEdit.How() & return after tLog
+put "... its numbers: " & (abs(Sfx.Get("edit", "decayTime") - 0.777) < 0.001) && Sfx.Get("edit", "decayTime") & return after tLog
+-- the window
+SEdit.Open "Explode/Explode_42.wav", tKit, "Canyon"
+put "window made: " & (there is a stack "SOUND EDIT") & return after tLog
+put "not shown (quiet): " & (the visible of stack "SOUND EDIT" is false) & return after tLog
+put "22 sliders: " & (the number of scrollbars of card 1 of stack "SOUND EDIT" = 22) && the number of scrollbars of card 1 of stack "SOUND EDIT" & return after tLog
+put Sfx.Get("edit", "decayTime") into tV
+put "slider shows the number: " & (the thumbPosition of scrollbar "S_decayTime" of card 1 of stack "SOUND EDIT" = SEdit.ToPos("decayTime", tV)) && tV & return after tLog
+put "number field: " & (field "V_decayTime" of card 1 of stack "SOUND EDIT" is format("%.3f", tV)) & return after tLog
+put "wave drawn: " & (the number of lines of the points of graphic "Wave" of card 1 of stack "SOUND EDIT" > 100) & return after tLog
+put "title is the file: " & (field "Title" of card 1 of stack "SOUND EDIT" is "Explode/Explode_42.wav") & return after tLog
+-- changes and undo
+put SEdit.Params() into tA
+SEdit.Set "decayTime", 0.9
+put "set: " & (abs(Sfx.Get("edit", "decayTime") - 0.9) < 0.001) & return after tLog
+put "... slider follows: " & (the thumbPosition of scrollbar "S_decayTime" of card 1 of stack "SOUND EDIT" = 900) & return after tLog
+SEdit.Undo
+put "undo: " & (SEdit.Params() is tA) & return after tLog
+SEdit.Slid "slide", 750
+put "slid: number shows at once: " & (field "V_slide" of card 1 of stack "SOUND EDIT" is "0.500") & return after tLog
+SEdit.ApplyNow
+put "... applied: " & (abs(Sfx.Get("edit", "slide") - 0.5) < 0.001) && Sfx.Get("edit", "slide") & return after tLog
+SEdit.Preset "coin"
+put "preset coin: new numbers: " & (SEdit.Params() is not tA) & return after tLog
+put SEdit.Params() into tB
+SEdit.Mutate
+put "mutate: changed: " & (SEdit.Params() is not tB) & return after tLog
+SEdit.Wave 2
+put "wave Sine: " & (Sfx.Get("edit", "waveType") = 2) & return after tLog
+put "... its button lit: " & (the backgroundColor of button "W_2" of card 1 of stack "SOUND EDIT" is "90,140,110") & return after tLog
+SEdit.Undo
+SEdit.Undo
+put "two undos: back to the coin: " & (SEdit.Params() is tB) & return after tLog
+SEdit.StartAgain
+put "start again: as it opened: " & (SEdit.Params() is tA) & return after tLog
+SEdit.Undo
+SEdit.Undo
+SEdit.Undo
+SEdit.Undo
+SEdit.Undo
+SEdit.Undo
+put "undo past the start: says so: " & (field "Status" of card 1 of stack "SOUND EDIT" is "nothing to undo") & return after tLog
+put "pos: signed 0 -> 500: " & (SEdit.ToPos("slide", 0) = 500) && "unsigned 1 -> 1000: " & (SEdit.ToPos("decayTime", 1) = 1000) && "back: " & (SEdit.FromPos("slide", 250) = -0.5) & return after tLog
+SEdit.Close
+put "closed: " & (there is not a stack "SOUND EDIT") & return after tLog
+-- Edit... in the AUDIO window (built, not shown)
+Audio.SetRoot tKit
+Audio.Build empty, 20
+Audio.Open
+Audio.UIBuild
+Audio.UIKit
+put "AUDIO has Edit...: " & (there is a button "Edit..." of card 1 of stack "AUDIO") & return after tLog
+Audio.UIEdit
+put "Edit with nothing chosen: asks: " & (field "Status" of card 1 of stack "AUDIO" contains "choose a sound to edit") & return after tLog
+put Audio.KitLine("Hit/Hit_92.wav") into tK
+set the hilitedLine of field "Kit" of card 1 of stack "AUDIO" to tK
+Audio.UIEdit
+put "Edit a kit sound: " & (field "Status" of card 1 of stack "AUDIO" contains "editing Hit/Hit_92.wav") && field "Status" of card 1 of stack "AUDIO" & return after tLog
+put "... SOUND EDIT has it: " & (SEdit.Entry() is "Hit/Hit_92.wav" and SEdit.How() is "kit") & return after tLog
+SEdit.Close
+Audio.Close
+delete file (tOut & "/e42.wav")
+delete file (tOut & "/pc51.wav")
+delete file (tOut & "/Zap/Zap_201.rfx")
+delete folder (tOut & "/Zap")
+delete folder tOut
+put "names: done" & return after tLog
+return tLog

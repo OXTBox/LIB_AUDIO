@@ -697,6 +697,7 @@ command Audio.UIBuild
    Audio.UIButton "Vol -", "200,530,260,556", "Audio.UIVolume -10", tC
    Audio.UIButton "Vol +", "270,530,330,556", "Audio.UIVolume 10", tC
    Audio.UIButton "<- Appoint", "460,530,570,556", "Audio.UIAppoint", tC
+   Audio.UIButton "Edit...", "580,530,680,556", "Audio.UIEdit", tC
    Audio.UIButton "Revert", "690,530,780,556", "Audio.UIRevert", tC
    Audio.UIButton "Save", "790,530,890,556", "Audio.UISave", tC
    Audio.UIButton "Close", "790,600,890,626", "Audio.Hide", tC
@@ -850,6 +851,40 @@ command Audio.PreviewStop
    if there is a stack kStack and there is a player "Preview" of card 1 of stack kStack then stop player "Preview" of card 1 of stack kStack
    put empty into sPreview
 end Audio.PreviewStop
+
+-- Edit... : the chosen kit sound (else the chosen word's) in the SOUND EDIT window
+-- (lib_sound_edit beside this file, LIB_SFX's numbers). Never an error: the status says why not.
+command Audio.UIEdit
+   local k, w, tEntry, tLib, tErr, tWhy
+   put the hilitedLine of field "Kit" of card 1 of stack kStack into k
+   if k is not empty then put sKitEntries[k] into tEntry
+   if tEntry is empty then
+      put Audio.UIWordLine() into w
+      if w is not empty then
+         set the itemDel to tab
+         put item 2 of line w of field "Words" of card 1 of stack kStack into tEntry
+         set the itemDel to comma
+      end if
+   end if
+   if tEntry is empty then
+      Audio.UIStatus "choose a sound to edit (right), or a word that has one (left)"
+      exit Audio.UIEdit
+   end if
+   Audio.PreviewStop
+   put the effective filename of me into tLib
+   set the itemDel to "/"
+   put item 1 to -2 of tLib & "/lib_sound_edit.livecodescript" into tLib
+   set the itemDel to comma
+   try
+      if "lib_sound_edit" is not among the lines of the stacksInUse then start using stack tLib
+      SEdit.Open tEntry, Audio.Root(), sGame
+      put the result into tWhy
+   catch tErr
+      put line 1 of tErr into tWhy
+   end try
+   if tWhy is empty then Audio.UIStatus "editing" && tEntry
+   else Audio.UIStatus "no sound editor:" && tWhy
+end Audio.UIEdit
 
 -- The selected word gets the selected kit line.
 command Audio.UIAppoint
