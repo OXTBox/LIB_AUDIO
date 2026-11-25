@@ -1,0 +1,28 @@
+-- Installed copies (tube a1-04, 24 Nov): Audio.Seed copies the kit once into the player's Sounds folder,
+-- never over what is there; the Library and Comfy Games scripts compile with their AUDIO calls.
+local tP, tR, tKit, tN, tS, tF
+put "/home/igame3d/projects" into tP
+put "/tmp/t85_sounds" into tR
+put tP & "/LIB_SFX/kit" into tKit
+start using stack (tP & "/LIB_AUDIO/livecode/lib_audio.livecodescript")
+Audio.SetRoot tR
+Audio.Seed tKit & "/Sounds", tKit & "/Music"
+put the result into tN
+put ck("first seed copies the kit (42 sounds + KIT.txt + songs)", tN >= 45, true) & return after tLog
+put ck("a category", there is a file (tR & "/Explode/Explode_42.wav"), true) & return after tLog
+put ck("music", there is a folder (tR & "/Music"), true) & return after tLog
+put "mine" into URL ("binfile:" & tR & "/Explode/Explode_42.wav")
+Audio.Seed tKit & "/Sounds", tKit & "/Music"
+put ck("second seed copies nothing", the result, 0) & return after tLog
+put ck("never over what is there", URL ("binfile:" & tR & "/Explode/Explode_42.wav"), "mine") & return after tLog
+Audio.Seed empty
+put ck("no source: nothing, no error", the result, 0) & return after tLog
+repeat for each item tF in "LIB_PUBLIC/launcher/vibe_launcher.livecodescript,LIB_COMFY/Player/comfy_games.livecodescript,LIB_AUDIO/livecode/lib_sound_edit.livecodescript"
+   put textDecode(URL ("binfile:" & tP & "/" & tF), "UTF-8") into tS
+   delete line 1 of tS
+   create invisible stack "cmp85"
+   set the script of stack "cmp85" to tS
+   put ck(tF & " compiles", the result, empty) & return after tLog
+   delete stack "cmp85"
+end repeat
+return tLog

@@ -88,3 +88,29 @@ Headless players have no media: a file "opens" when it is there. Only Windows ru
 - Python `open()` turns CRLF into LF: the engine source is CRLF; read and write it as bytes.
 - Re-bake sounds: Windows `python.exe LIB_SFX/tools/bake_kit.py` (ctypes on xtsfx.dll, no gcc in WSL);
   music: `python3 LIB_SFX/tools/make_music.py`. Then copy to `Documents/Data/Sounds`.
+
+## SOUND EDITOR steps 1-2 (24 Nov, late): branch `sound-editor` (built on `comfy-audio`), waits for his look
+- `livecode/lib_sound_edit.livecodescript` NEW: the SOUND EDIT window (beside AUDIO, 1106,32). AUDIO window
+  **Edit...** opens the chosen kit sound (else the chosen word's). LIB_SFX's numbers as 22 sliders in plain
+  words (Pitch, Fade out, Wobble, Muffle...), 8 presets, wave type, Mutate, Hear (every change plays), Undo
+  (50), Start again, wave picture. A kit file opens with the kit's exact numbers (kit.txt preset + seed +
+  overrides: same wav byte for byte); a `.rfx` beside a wav wins; other files start from their folder's preset.
+- **Save...** asks "This game / Every game": a NEW `Sounds/<Game>/<Cat>/<Cat>_<n>.wav` (or `Sounds/<Cat>/...`)
+  + `.rfx`; old files stay. The word Edit... came from gets it in AUDIO (press Save there to keep).
+- Test `tests/t84_sound_edit.txt`, 47 checks, runs in Windows LiveCode (LIB_SFX's DLL is Windows only):
+  `bash tests/run_t84.sh` (LIB_MCP standalone). Silent, no window. t79-t81, t83 green headless.
+- Trap: the Windows standalone keeps a broken first copy of a library; t84 deletes old copies first.
+- Next: a1-03 tuning pass (his list of games), a1-04 installed/public copies (xtsfx.dll + kit.txt + kit).
+
+## a1-04 INSTALLED COPIES (24 Nov, night): on branches, V: refreshed; the two .exe builds wait
+- `vibeinstall.py` (LIB_PUBLIC branch `audio-install`): `install_audio_files` puts lib_audio, lib_sound_edit,
+  lib_sfx, AUDIO.livecode, xtsfx/ (from C:/xtsfx/extension) into the Engine folder, and the kit
+  (Sounds/<Cat>, Sounds/KIT_RECIPE.txt = LIB_SFX/kit/kit.txt, Music/) beside it. Library: Vibecode3D Common;
+  Comfy: Player/. Comfy installs from main by default now (was the stale comfy-games-app); Photon Ball's
+  files ship for the Photon remix. Tonight's V: Comfy came from `COMFY_REF=comfy-audio`.
+- `Audio.Seed`: the first game copies the kit into the player's Sounds folder once (never over files);
+  `VL.Audio` (Library) and `CG.Audio` (Comfy) do it. Sound editor finds lib_sfx + xtsfx beside itself.
+- Tests: t85_seed (headless), t27 +1 (Library plays through the installed AUDIO), t84 47, t64, t81, t83 green.
+- **DONE 24 Nov 22:55:** owner rebuilt both exes; installed on V: (Vibecode3D.exe + ComfyGames.exe new;
+  the spare `Vibecode3D Library.exe` copy replaced too once he closed it).
+- Traps: `tExt` = text, `tHere` = there (xTalk ignores case); Windows sees kit.txt = KIT.txt.

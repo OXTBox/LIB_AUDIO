@@ -57,6 +57,66 @@ function Audio.Root
    return tRoot
 end Audio.Root
 
+-- An installed copy brings the kit (Vibecode3D Common/Sounds + /Music, Comfy's Player/Sounds + /Music).
+-- Each category the Sounds folder does not have yet is copied there once, never over what is there,
+-- so the AUDIO window and the sound editor save beside them. Returns how many files were copied.
+command Audio.Seed pFrom, pMusicFrom
+   local tRoot, tCat, tN, f
+   put Audio.Root() into tRoot
+   put 0 into tN
+   if pFrom is empty or there is not a folder pFrom then return 0
+   Audio.SeedMake tRoot
+   repeat for each line tCat in Audio.Subfolders(pFrom)
+      if tCat is "Games" or there is a folder (tRoot & "/" & tCat) then next repeat
+      add Audio.SeedCopy(pFrom & "/" & tCat, tRoot & "/" & tCat) to tN
+   end repeat
+   if pMusicFrom is not empty and there is a folder pMusicFrom and there is not a folder (tRoot & "/Music") then
+      add Audio.SeedCopy(pMusicFrom, tRoot & "/Music") to tN
+   end if
+   -- the sound editor's recipe (LIB_SFX/kit/kit.txt; not "kit.txt": Windows sees KIT.txt as the same file)
+   if there is a file (pFrom & "/KIT_RECIPE.txt") and there is not a file (tRoot & "/KIT_RECIPE.txt") then
+      put URL ("binfile:" & pFrom & "/KIT_RECIPE.txt") into URL ("binfile:" & tRoot & "/KIT_RECIPE.txt")
+      add 1 to tN
+   end if
+   return tN
+end Audio.Seed
+
+function Audio.SeedCopy pFrom, pTo
+   local tOld, tFiles, f, tN
+   put 0 into tN
+   Audio.SeedMake pTo
+   put the folder into tOld
+   set the folder to pFrom
+   put files() into tFiles
+   set the folder to tOld
+   repeat for each line f in tFiles
+      if f is empty or char 1 of f is "." then next repeat
+      put URL ("binfile:" & pFrom & "/" & f) into URL ("binfile:" & pTo & "/" & f)
+      if the result is empty then add 1 to tN
+   end repeat
+   return tN
+end Audio.SeedCopy
+
+-- a folder and the ones above it
+command Audio.SeedMake pPath
+   local tSoFar, tPart, tErr
+   set the itemDel to "/"
+   repeat for each item tPart in pPath
+      if tSoFar is empty and tPart is empty then
+         put "/" into tSoFar
+         next repeat
+      end if
+      if tSoFar is empty or char -1 of tSoFar is "/" then put tSoFar & tPart into tSoFar
+      else put tSoFar & "/" & tPart into tSoFar
+      if tPart is empty or tSoFar ends with ":" then next repeat
+      try
+         if there is not a folder tSoFar then create folder tSoFar
+      catch tErr
+      end try
+   end repeat
+   set the itemDel to comma
+end Audio.SeedMake
+
 -------------------------------------------------------------------------------------------
 -- The AUDIO stack
 
@@ -169,33 +229,40 @@ end Audio.PoolSize
 -------------------------------------------------------------------------------------------
 -- Cards and words
 
--- A card per game (text only): the Vibecode3D_Play_<Game>.livecodescript files of pFolder.
+-- A card per game (text only): the Vibecode3D_Play_<Game>.livecodescript files of pFolder,
+-- one folder a line (Comfy Games reads two: games/ and the player's own builds). A name in two
+-- folders keeps the first folder's script.
 command Audio.Refresh pFolder
-   local tFiles, tFile, tGame, tDef
+   local tFiles, tFile, tGame, tDef, tDir, tWas, tSeen
    if not Audio.IsOpen() then Audio.Open
    put the defaultStack into tDef
    set the defaultStack to kStack
-   put the folder into tFile
-   set the folder to pFolder
-   put files() into tFiles
-   set the folder to tFile
-   filter tFiles with "Vibecode3D_Play_*.livecodescript"
    lock screen
    lock messages
    go card 1 of stack kStack
-   repeat for each line tFile in tFiles
-      put char 17 to -16 of tFile into tGame
-      if there is not a card tGame of stack kStack then
-         create card tGame
-         -- Only the words view. The pool stays on card 1 alone: on Windows every card that
-         -- shows 100 players sets them all up again (0.38 s a card, 23 Nov), so AUDIO never
-         -- leaves card 1 while hidden and the game cards are text only.
-         if there is a group kPool of card tGame then remove group kPool from card tGame
-         if there is not a group "View" of card tGame then place group "View" of card 1 onto card tGame
-         put tGame into field "Title" of card tGame
-      end if
-      set the uScriptFile of card tGame of stack kStack to pFolder & "/" & tFile
+   put the folder into tWas
+   repeat for each line tDir in pFolder
+      if tDir is empty or there is not a folder tDir then next repeat
+      set the folder to tDir
+      put files() into tFiles
+      filter tFiles with "Vibecode3D_Play_*.livecodescript"
+      repeat for each line tFile in tFiles
+         put char 17 to -16 of tFile into tGame
+         if tSeen[tGame] is true then next repeat
+         put true into tSeen[tGame]
+         if there is not a card tGame of stack kStack then
+            create card tGame
+            -- Only the words view. The pool stays on card 1 alone: on Windows every card that
+            -- shows 100 players sets them all up again (0.38 s a card, 23 Nov), so AUDIO never
+            -- leaves card 1 while hidden and the game cards are text only.
+            if there is a group kPool of card tGame then remove group kPool from card tGame
+            if there is not a group "View" of card tGame then place group "View" of card 1 onto card tGame
+            put tGame into field "Title" of card tGame
+         end if
+         set the uScriptFile of card tGame of stack kStack to tDir & "/" & tFile
+      end repeat
    end repeat
+   set the folder to tWas
    go card 1 of stack kStack
    unlock messages
    unlock screen
@@ -219,14 +286,26 @@ function Audio.ScriptNames pScriptFile
    return line 1 to -1 of tList
 end Audio.ScriptNames
 
--- A game's words: the saved file Sounds/Games/<Game>.txt, else made from its script and the kit.
+-- A game's words: the saved file (Audio.WordsFile), else made from its script and the kit.
+-- Words borrowed from the family or the remix source get the script's other names added (kit).
 function Audio.Words pGame, pScriptFile
-   local tFile, tWords, tName, tEntry
-   put Audio.Root() & "/Games/" & pGame & ".txt" into tFile
-   if there is a file tFile then
+   local tFile, tWords, tName, tEntry, tHave, tLine
+   put Audio.WordsFile(pGame, pScriptFile) into tFile
+   if tFile is not empty then
       put textDecode(URL ("binfile:" & tFile), "UTF-8") into tWords
       replace numToChar(13) with empty in tWords
-      return line 1 to -1 of tWords
+      put line 1 to -1 of tWords into tWords
+      if tFile ends with ("/" & pGame & ".txt") then return tWords
+      set the itemDel to tab
+      repeat for each line tLine in tWords
+         put true into tHave[item 1 of tLine]
+      end repeat
+      set the itemDel to comma
+      repeat for each line tName in Audio.ScriptNames(pScriptFile)
+         if tHave[tName] is true then next repeat
+         put cr & tName & tab & Audio.Entry(pGame, tName) & tab & Audio.DefaultCopies(tName) & tab & 80 after tWords
+      end repeat
+      return tWords
    end if
    repeat for each line tName in Audio.ScriptNames(pScriptFile)
       put Audio.Entry(pGame, tName) into tEntry
@@ -235,6 +314,42 @@ function Audio.Words pGame, pScriptFile
    put "Music" & tab & Audio.Entry(pGame, "Music") & tab & tab & 60 after tWords
    return tWords
 end Audio.Words
+
+-- Which saved words a game uses, the first there of: Games/<Game>.txt; its family
+-- Games/<Game without trailing digits>.txt (ComfyPhoton937801948 -> ComfyPhoton.txt); the game
+-- it was remixed from, named in its header ("remixed in ComfyUI from Photon Ball" -> PhotonBall.txt).
+-- Empty: none, the words come from the script.
+function Audio.WordsFile pGame, pScriptFile
+   local tDir, tName
+   put Audio.Root() & "/Games/" into tDir
+   if there is a file (tDir & pGame & ".txt") then return tDir & pGame & ".txt"
+   put Audio.Family(pGame) into tName
+   if tName is not pGame and there is a file (tDir & tName & ".txt") then return tDir & tName & ".txt"
+   put Audio.RemixSource(pScriptFile) into tName
+   if tName is not empty and there is a file (tDir & tName & ".txt") then return tDir & tName & ".txt"
+   return empty
+end Audio.WordsFile
+
+-- The game's name without its trailing digits (a Comfy game's seed); the name itself when none.
+function Audio.Family pGame
+   local tName
+   put pGame into tName
+   repeat while tName is not empty and char -1 of tName is in "0123456789"
+      delete char -1 of tName
+   end repeat
+   if tName is empty then return pGame
+   return tName
+end Audio.Family
+
+-- "remixed in ComfyUI from Photon Ball" in the first lines of the script -> PhotonBall
+function Audio.RemixSource pScriptFile
+   local tText, tName
+   if pScriptFile is empty or there is not a file pScriptFile then return empty
+   put line 1 to 12 of textDecode(URL ("binfile:" & pScriptFile), "UTF-8") into tText
+   if not matchText(tText, "remixed in ComfyUI from ([A-Za-z0-9 ]+)", tName) then return empty
+   replace space with empty in tName
+   return tName
+end Audio.RemixSource
 
 -- The folder for a name: the game's own first, then the shared kit; empty when neither.
 function Audio.Entry pGame, pName
@@ -571,6 +686,7 @@ local sKitEntries   -- [line number of field "Kit"] its entry: Category/ or Cate
 local sChanged      -- [name] true when its sound was appointed and not saved yet
 local sDirty        -- true when the words were changed and not saved
 local sPreview      -- the file in player "Preview" (Sounds-relative)
+local sEditWord     -- the word chosen when Edit... was clicked: a sound saved in SOUND EDIT goes to it
 
 command Audio.Show pGame
    if not Audio.IsOpen() then Audio.Open
@@ -642,6 +758,7 @@ command Audio.UIBuild
    Audio.UIButton "Vol -", "200,530,260,556", "Audio.UIVolume -10", tC
    Audio.UIButton "Vol +", "270,530,330,556", "Audio.UIVolume 10", tC
    Audio.UIButton "<- Appoint", "460,530,570,556", "Audio.UIAppoint", tC
+   Audio.UIButton "Edit...", "580,530,680,556", "Audio.UIEdit", tC
    Audio.UIButton "Revert", "690,530,780,556", "Audio.UIRevert", tC
    Audio.UIButton "Save", "790,530,890,556", "Audio.UISave", tC
    Audio.UIButton "Close", "790,600,890,626", "Audio.Hide", tC
@@ -796,6 +913,80 @@ command Audio.PreviewStop
    put empty into sPreview
 end Audio.PreviewStop
 
+-- Edit... : the chosen kit sound (else the chosen word's) in the SOUND EDIT window
+-- (lib_sound_edit beside this file, LIB_SFX's numbers). Never an error: the status says why not.
+command Audio.UIEdit
+   local k, w, tEntry, tLib, tErr, tWhy
+   put the hilitedLine of field "Kit" of card 1 of stack kStack into k
+   if k is not empty then put sKitEntries[k] into tEntry
+   if tEntry is empty then
+      put Audio.UIWordLine() into w
+      if w is not empty then
+         set the itemDel to tab
+         put item 2 of line w of field "Words" of card 1 of stack kStack into tEntry
+         set the itemDel to comma
+      end if
+   end if
+   if tEntry is empty then
+      Audio.UIStatus "choose a sound to edit (right), or a word that has one (left)"
+      exit Audio.UIEdit
+   end if
+   Audio.PreviewStop
+   put empty into sEditWord
+   put Audio.UIWordLine() into w
+   if w is not empty then
+      set the itemDel to tab
+      put item 1 of line w of field "Words" of card 1 of stack kStack into sEditWord
+      set the itemDel to comma
+   end if
+   put the effective filename of me into tLib
+   set the itemDel to "/"
+   put item 1 to -2 of tLib & "/lib_sound_edit.livecodescript" into tLib
+   set the itemDel to comma
+   try
+      if "lib_sound_edit" is not among the lines of the stacksInUse then start using stack tLib
+      SEdit.Open tEntry, Audio.Root(), sGame
+      put the result into tWhy
+   catch tErr
+      put line 1 of tErr into tWhy
+   end try
+   if tWhy is empty then Audio.UIStatus "editing" && tEntry
+   else Audio.UIStatus "no sound editor:" && tWhy
+end Audio.UIEdit
+
+-- SOUND EDIT saved pEntry (Sounds-relative): the kit list shows it, chosen; the word Edit... was
+-- opened from gets it, as an appoint does (then Save here keeps it).
+command Audio.EditSaved pEntry
+   local w, tLine, k
+   if there is not a field "Words" of card 1 of stack kStack then exit Audio.EditSaved
+   Audio.UIKit
+   put Audio.KitLine(pEntry) into k
+   if k > 0 then set the hilitedLine of field "Kit" of card 1 of stack kStack to k
+   if sEditWord is empty then
+      Audio.UIStatus "new sound" && pEntry & ": choose a word and Appoint it"
+      exit Audio.EditSaved
+   end if
+   put 0 into w
+   put 0 into k
+   repeat for each line tLine in field "Words" of card 1 of stack kStack
+      add 1 to k
+      if tLine begins with (sEditWord & tab) then
+         put k into w
+         exit repeat
+      end if
+   end repeat
+   if w is 0 then exit Audio.EditSaved
+   set the itemDel to tab
+   put line w of field "Words" of card 1 of stack kStack into tLine
+   put pEntry into item 2 of tLine
+   put tLine into line w of field "Words" of card 1 of stack kStack
+   set the itemDel to comma
+   put true into sChanged[sEditWord]
+   put true into sDirty
+   set the hilitedLine of field "Words" of card 1 of stack kStack to w
+   Audio.UIStatus sEditWord && "now" && pEntry & ": Save to keep it"
+end Audio.EditSaved
+
 -- The selected word gets the selected kit line.
 command Audio.UIAppoint
    local w, k, tLine, tEntry
@@ -845,12 +1036,23 @@ command Audio.UIVolume pDelta
 end Audio.UIVolume
 
 -- Writes Sounds/Games/<Game>.txt and fills again (music goes on if it was playing).
-command Audio.UISave
-   local tFolder, tFile, tMusic, tWords
+-- A game with a family (Comfy: ComfyPhoton937801948) asks: this game, or the whole family
+-- (Games/ComfyPhoton.txt, which every ComfyPhoton without its own file then uses).
+-- pFor: "game" or "family" answers that without asking (tests).
+command Audio.UISave pFor
+   local tFolder, tFile, tMusic, tWords, tName, tFamily
    if sGame is empty then exit Audio.UISave
+   put sGame into tName
+   put Audio.Family(sGame) into tFamily
+   if tFamily is not sGame and pFor is empty then
+      answer "Save these sounds for" && sGame && "alone, or for every" && tFamily && "game?" with "Cancel" or "Whole family" or "This game"
+      if it is "Cancel" then exit Audio.UISave
+      if it is "Whole family" then put "family" into pFor
+   end if
+   if pFor is "family" and tFamily is not sGame then put tFamily into tName
    put Audio.Root() & "/Games" into tFolder
    if there is not a folder tFolder then create folder tFolder
-   put tFolder & "/" & sGame & ".txt" into tFile
+   put tFolder & "/" & tName & ".txt" into tFile
    put field "Words" of card 1 of stack kStack into tWords
    put textEncode(line 1 to -1 of tWords & cr, "UTF-8") into URL ("binfile:" & tFile)
    if the result is not empty then
