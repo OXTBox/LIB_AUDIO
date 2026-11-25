@@ -5,6 +5,8 @@ local tLog, tP, tKit, tOut, tA, tB, tV, tWhy, tK
 put "//wsl$/Ubuntu/home/igame3d/projects" into tP
 put tP & "/LIB_SFX/kit/Sounds" into tKit
 put "C:/xtsfx/test_t84" into tOut
+set the hideConsoleWindows to true
+get shell("rmdir /s /q C:\xtsfx\test_t84")   -- a clean folder each run
 if there is not a folder tOut then create folder tOut
 if there is not a folder (tOut & "/Zap") then create folder (tOut & "/Zap")
 -- the newest files, not a copy kept from an earlier run
@@ -99,12 +101,54 @@ set the hilitedLine of field "Kit" of card 1 of stack "AUDIO" to tK
 Audio.UIEdit
 put "Edit a kit sound: " & (field "Status" of card 1 of stack "AUDIO" contains "editing Hit/Hit_92.wav") && field "Status" of card 1 of stack "AUDIO" & return after tLog
 put "... SOUND EDIT has it: " & (SEdit.Entry() is "Hit/Hit_92.wav" and SEdit.How() is "kit") & return after tLog
+-- step 2: Save (a new file + .rfx; for this game or every game; AUDIO's word gets it)
+Audio.SetRoot tOut
+Audio.Select "Canyon", tP & "/LIB_GAMES/Vibecode3D_Games/Vibecode3D_Play_Canyon.livecodescript"
+Audio.StopFill
+Audio.UIKit
+put "Hit" & tab & "Hit/" & tab & tab & 80 & return & "Music" & tab & tab & tab & 60 into field "Words" of card 1 of stack "AUDIO"
+set the hilitedLine of field "Words" of card 1 of stack "AUDIO" to 1
+set the hilitedLine of field "Kit" of card 1 of stack "AUDIO" to empty
+-- a copy of one kit file in the test folder: saves never go into the real kit
+if there is not a folder (tOut & "/Hit") then create folder (tOut & "/Hit")
+put URL ("binfile:" & tKit & "/Hit/Hit_92.wav") into URL ("binfile:" & tOut & "/Hit/Hit_92.wav")
+Audio.UIEdit
+put "opened from the test folder: " & (SEdit.Entry() is "Hit/Hit_92.wav" and SEdit.How() is "kit") & return after tLog
+SEdit.Set "decayTime", 0.42
+put SEdit.Params() into tA
+SEdit.Save "game"
+put the result into tV
+put "save for this game: Canyon/Hit/Hit_1.wav: " & (tV is "Canyon/Hit/Hit_1.wav") && tV & return after tLog
+put "... the wav and the rfx: " & (there is a file (tOut & "/Canyon/Hit/Hit_1.wav")) && (there is a file (tOut & "/Canyon/Hit/Hit_1.rfx")) & return after tLog
+put "... 22050 Hz like the kit: " & (byteToNum(byte 25 of URL ("binfile:" & tOut & "/Canyon/Hit/Hit_1.wav")) + 256 * byteToNum(byte 26 of URL ("binfile:" & tOut & "/Canyon/Hit/Hit_1.wav")) = 22050) & return after tLog
+set the itemDel to tab
+put "... AUDIO's word Hit has it: " & (item 2 of line 1 of field "Words" of card 1 of stack "AUDIO" is "Canyon/Hit/Hit_1.wav") && item 2 of line 1 of field "Words" of card 1 of stack "AUDIO" & return after tLog
+set the itemDel to comma
+put "... AUDIO not saved yet: " & (Audio.UIDirty() is true) & return after tLog
+put "... kit list shows it chosen: " & (Audio.KitEntry(the hilitedLine of field "Kit" of card 1 of stack "AUDIO") is "Canyon/Hit/Hit_1.wav") & return after tLog
+SEdit.Save "game"
+put "a second save: a new file, the old stays: " & (the result is "Canyon/Hit/Hit_2.wav") && (there is a file (tOut & "/Canyon/Hit/Hit_1.wav")) & return after tLog
+SEdit.Save "every"
+put "save for every game: Hit/Hit_1.wav: " & (the result is "Hit/Hit_1.wav") && (there is a file (tOut & "/Hit/Hit_1.rfx")) & return after tLog
+SEdit.Close
+SEdit.Open "Canyon/Hit/Hit_1.wav", tOut, "Canyon"
+put "it opens again with its own numbers: " & (SEdit.How() is "rfx") && (SEdit.Params() is tA) & return after tLog
 SEdit.Close
 Audio.Close
+delete file (tOut & "/Hit/Hit_92.wav")
+repeat for each item tA in "Canyon/Hit/Hit_1,Canyon/Hit/Hit_2,Hit/Hit_1"
+   if there is a file (tOut & "/" & tA & ".wav") then delete file (tOut & "/" & tA & ".wav")
+   if there is a file (tOut & "/" & tA & ".rfx") then delete file (tOut & "/" & tA & ".rfx")
+end repeat
+delete folder (tOut & "/Canyon/Hit")
+delete folder (tOut & "/Canyon")
+delete folder (tOut & "/Hit")
 delete file (tOut & "/e42.wav")
 delete file (tOut & "/pc51.wav")
 delete file (tOut & "/Zap/Zap_201.rfx")
 delete folder (tOut & "/Zap")
 delete folder tOut
+get shell("rmdir /s /q C:\xtsfx\test_t84")
+put "test folder gone: " & (there is not a folder tOut) & return after tLog
 put "names: done" & return after tLog
 return tLog

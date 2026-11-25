@@ -626,6 +626,7 @@ local sKitEntries   -- [line number of field "Kit"] its entry: Category/ or Cate
 local sChanged      -- [name] true when its sound was appointed and not saved yet
 local sDirty        -- true when the words were changed and not saved
 local sPreview      -- the file in player "Preview" (Sounds-relative)
+local sEditWord     -- the word chosen when Edit... was clicked: a sound saved in SOUND EDIT goes to it
 
 command Audio.Show pGame
    if not Audio.IsOpen() then Audio.Open
@@ -871,6 +872,13 @@ command Audio.UIEdit
       exit Audio.UIEdit
    end if
    Audio.PreviewStop
+   put empty into sEditWord
+   put Audio.UIWordLine() into w
+   if w is not empty then
+      set the itemDel to tab
+      put item 1 of line w of field "Words" of card 1 of stack kStack into sEditWord
+      set the itemDel to comma
+   end if
    put the effective filename of me into tLib
    set the itemDel to "/"
    put item 1 to -2 of tLib & "/lib_sound_edit.livecodescript" into tLib
@@ -885,6 +893,39 @@ command Audio.UIEdit
    if tWhy is empty then Audio.UIStatus "editing" && tEntry
    else Audio.UIStatus "no sound editor:" && tWhy
 end Audio.UIEdit
+
+-- SOUND EDIT saved pEntry (Sounds-relative): the kit list shows it, chosen; the word Edit... was
+-- opened from gets it, as an appoint does (then Save here keeps it).
+command Audio.EditSaved pEntry
+   local w, tLine, k
+   if there is not a field "Words" of card 1 of stack kStack then exit Audio.EditSaved
+   Audio.UIKit
+   put Audio.KitLine(pEntry) into k
+   if k > 0 then set the hilitedLine of field "Kit" of card 1 of stack kStack to k
+   if sEditWord is empty then
+      Audio.UIStatus "new sound" && pEntry & ": choose a word and Appoint it"
+      exit Audio.EditSaved
+   end if
+   put 0 into w
+   put 0 into k
+   repeat for each line tLine in field "Words" of card 1 of stack kStack
+      add 1 to k
+      if tLine begins with (sEditWord & tab) then
+         put k into w
+         exit repeat
+      end if
+   end repeat
+   if w is 0 then exit Audio.EditSaved
+   set the itemDel to tab
+   put line w of field "Words" of card 1 of stack kStack into tLine
+   put pEntry into item 2 of tLine
+   put tLine into line w of field "Words" of card 1 of stack kStack
+   set the itemDel to comma
+   put true into sChanged[sEditWord]
+   put true into sDirty
+   set the hilitedLine of field "Words" of card 1 of stack kStack to w
+   Audio.UIStatus sEditWord && "now" && pEntry & ": Save to keep it"
+end Audio.EditSaved
 
 -- The selected word gets the selected kit line.
 command Audio.UIAppoint

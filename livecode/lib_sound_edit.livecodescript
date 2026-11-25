@@ -361,6 +361,91 @@ function SEdit.Label pParam
 end SEdit.Label
 
 -------------------------------------------------------------------------------------------
+-- Saving (step 2): always a NEW file, the old one stays (the owner keeps old builds).
+--   this game:  Sounds/<Game>/<Category>/<Category>_<n>.wav  (the game's own: wins over the kit)
+--   every game: Sounds/<Category>/<Category>_<n>.wav         (the shared kit)
+-- with <same name>.rfx beside it, so it opens again with exactly these numbers. AUDIO is told
+-- (Audio.EditSaved): the kit list shows it, and the word it was opened from gets it (then Save there).
+-- pFor: "game" or "every" answers without asking (tests). Returns the Sounds-relative file, or empty.
+
+command SEdit.Save pFor
+   local tCat, tDir, tN, tBase, tRel, tWhy, tErr
+   if not Sfx.Has(kSound) then exit SEdit.Save
+   set the itemDel to "/"
+   put item -2 of sEntry into tCat
+   set the itemDel to comma
+   if tCat is empty then put "Sounds" into tCat
+   if pFor is empty then
+      if sGame is empty then
+         answer "Save this sound into the shared" && tCat && "folder (every game)?" with "Cancel" or "Every game"
+      else
+         answer "Save this" && tCat && "sound for" && sGame && "only, or for every game?" with "Cancel" or "Every game" or ("This game")
+      end if
+      if it is "Cancel" or it is empty then
+         SEdit.Status "not saved"
+         return empty
+      end if
+      if it is "Every game" then put "every" into pFor
+      else put "game" into pFor
+   end if
+   if pFor is "game" and sGame is not empty then
+      put sGame & "/" & tCat into tRel
+   else
+      put tCat into tRel
+   end if
+   put sRoot & "/" & tRel into tDir
+   SEdit.MakeFolders tDir
+   put 1 into tN
+   repeat while there is a file (tDir & "/" & tCat & "_" & tN & ".wav") or there is a file (tDir & "/" & tCat & "_" & tN & ".rfx")
+      add 1 to tN
+   end repeat
+   put tCat & "_" & tN into tBase
+   Sfx.Export kSound, tDir & "/" & tBase & ".wav", 22050, 16, 1
+   put the result into tWhy
+   if tWhy is empty then
+      Sfx.Save kSound, tDir & "/" & tBase & ".rfx"
+      put the result into tWhy
+   end if
+   if tWhy is not empty then
+      SEdit.Status "NOT saved:" && tWhy
+      return empty
+   end if
+   put tRel & "/" & tBase & ".wav" into tRel
+   put tRel into sEntry
+   put "rfx" into sHow
+   put Sfx.Params(kSound) into sStartParams
+   if there is a stack kStack then
+      put sEntry into field "Title" of card 1 of stack kStack
+      set the title of stack kStack to "FOR OWNER | SOUND EDIT:" && sEntry
+   end if
+   try
+      if "lib_audio" is among the lines of the stacksInUse then Audio.EditSaved tRel
+   catch tErr
+   end try
+   SEdit.Status "saved" && tRel
+   return tRel
+end SEdit.Save
+
+command SEdit.MakeFolders pPath
+   local tSoFar, tPart, tErr
+   set the itemDel to "/"
+   repeat for each item tPart in pPath
+      if tSoFar is empty and tPart is empty then
+         put "/" into tSoFar
+         next repeat
+      end if
+      if tSoFar is empty or tSoFar is "/" or char -1 of tSoFar is "/" then put tSoFar & tPart into tSoFar
+      else put tSoFar & "/" & tPart into tSoFar
+      if tSoFar ends with ":" or tPart is empty then next repeat
+      try
+         if there is not a folder tSoFar then create folder tSoFar
+      catch tErr
+      end try
+   end repeat
+   set the itemDel to comma
+end SEdit.MakeFolders
+
+-------------------------------------------------------------------------------------------
 -- The window (made once, in memory). Template colours first (owner's rule), dark like AUDIO.
 
 command SEdit.UIBuild
@@ -453,8 +538,8 @@ command SEdit.UIBuild
    add 50 to tY
    -- buttons
    put 10 into tX
-   repeat for each item p in "Hear,Mutate,Undo,Start again,Close"
-      put 76 into tW
+   repeat for each item p in "Hear,Mutate,Undo,Start again,Save...,Close"
+      put 62 into tW
       create button p
       set the rect of button p to tX, tY, tX + tW, tY + 24
       switch p
@@ -471,6 +556,10 @@ command SEdit.UIBuild
          case "Start again"
             set the script of button p to replaceText(tC, "#", "SEdit.StartAgain")
             set the toolTip of button p to "back to the numbers it opened with"
+            break
+         case "Save..."
+            set the script of button p to replaceText(tC, "#", "SEdit.Save")
+            set the toolTip of button p to "a new sound file for this game, or for every game (the old one stays)"
             break
          case "Close"
             set the script of button p to replaceText(tC, "#", "SEdit.Close")
