@@ -101,3 +101,16 @@ Headless players have no media: a file "opens" when it is there. Only Windows ru
   `bash tests/run_t84.sh` (LIB_MCP standalone). Silent, no window. t79-t81, t83 green headless.
 - Trap: the Windows standalone keeps a broken first copy of a library; t84 deletes old copies first.
 - Next: a1-03 tuning pass (his list of games), a1-04 installed/public copies (xtsfx.dll + kit.txt + kit).
+
+## a1-04 INSTALLED COPIES (24 Nov, night): on branches, V: refreshed; the two .exe builds wait
+- `vibeinstall.py` (LIB_PUBLIC branch `audio-install`): `install_audio_files` puts lib_audio, lib_sound_edit,
+  lib_sfx, AUDIO.livecode, xtsfx/ (from C:/xtsfx/extension) into the Engine folder, and the kit
+  (Sounds/<Cat>, Sounds/KIT_RECIPE.txt = LIB_SFX/kit/kit.txt, Music/) beside it. Library: Vibecode3D Common;
+  Comfy: Player/. Comfy installs from main by default now (was the stale comfy-games-app); Photon Ball's
+  files ship for the Photon remix. Tonight's V: Comfy came from `COMFY_REF=comfy-audio`.
+- `Audio.Seed`: the first game copies the kit into the player's Sounds folder once (never over files);
+  `VL.Audio` (Library) and `CG.Audio` (Comfy) do it. Sound editor finds lib_sfx + xtsfx beside itself.
+- Tests: t85_seed (headless), t27 +1 (Library plays through the installed AUDIO), t84 47, t64, t81, t83 green.
+- **Waits:** rebuild Vibecode3D Library.exe (VL.Audio) and ComfyGames.exe (CG.Audio; re-save the stack
+  with comfy_games.livecodescript first), then `vibeinstall.py install` / `comfygames` again.
+- Traps: `tExt` = text, `tHere` = there (xTalk ignores case); Windows sees kit.txt = KIT.txt.
