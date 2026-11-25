@@ -57,6 +57,65 @@ function Audio.Root
    return tRoot
 end Audio.Root
 
+-- An installed copy brings the kit (Vibecode3D Common/Sounds + /Music, Comfy's Player/Sounds + /Music).
+-- Each category the Sounds folder does not have yet is copied there once, never over what is there,
+-- so the AUDIO window and the sound editor save beside them. Returns how many files were copied.
+command Audio.Seed pFrom, pMusicFrom
+   local tRoot, tCat, tN, f
+   put Audio.Root() into tRoot
+   put 0 into tN
+   if pFrom is empty or there is not a folder pFrom then return 0
+   Audio.SeedMake tRoot
+   repeat for each line tCat in Audio.Subfolders(pFrom)
+      if tCat is "Games" or there is a folder (tRoot & "/" & tCat) then next repeat
+      add Audio.SeedCopy(pFrom & "/" & tCat, tRoot & "/" & tCat) to tN
+   end repeat
+   if pMusicFrom is not empty and there is a folder pMusicFrom and there is not a folder (tRoot & "/Music") then
+      add Audio.SeedCopy(pMusicFrom, tRoot & "/Music") to tN
+   end if
+   if there is a file (pFrom & "/kit.txt") and there is not a file (tRoot & "/kit.txt") then
+      put URL ("binfile:" & pFrom & "/kit.txt") into URL ("binfile:" & tRoot & "/kit.txt")
+      add 1 to tN
+   end if
+   return tN
+end Audio.Seed
+
+function Audio.SeedCopy pFrom, pTo
+   local tOld, tFiles, f, tN
+   put 0 into tN
+   Audio.SeedMake pTo
+   put the folder into tOld
+   set the folder to pFrom
+   put files() into tFiles
+   set the folder to tOld
+   repeat for each line f in tFiles
+      if f is empty or char 1 of f is "." then next repeat
+      put URL ("binfile:" & pFrom & "/" & f) into URL ("binfile:" & pTo & "/" & f)
+      if the result is empty then add 1 to tN
+   end repeat
+   return tN
+end Audio.SeedCopy
+
+-- a folder and the ones above it
+command Audio.SeedMake pPath
+   local tSoFar, tPart, tErr
+   set the itemDel to "/"
+   repeat for each item tPart in pPath
+      if tSoFar is empty and tPart is empty then
+         put "/" into tSoFar
+         next repeat
+      end if
+      if tSoFar is empty or char -1 of tSoFar is "/" then put tSoFar & tPart into tSoFar
+      else put tSoFar & "/" & tPart into tSoFar
+      if tPart is empty or tSoFar ends with ":" then next repeat
+      try
+         if there is not a folder tSoFar then create folder tSoFar
+      catch tErr
+      end try
+   end repeat
+   set the itemDel to comma
+end Audio.SeedMake
+
 -------------------------------------------------------------------------------------------
 -- The AUDIO stack
 

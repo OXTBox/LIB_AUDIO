@@ -37,14 +37,23 @@ local sQuiet         -- true: changes are not played and the window is not shown
 
 -- empty when LIB_SFX is ready, else why not (one line)
 function SEdit.Start
-   local tLib, tErr
+   local tLib, tErr, tMyDir, tSfxDir
+   put the effective filename of me into tMyDir
+   replace "\" with "/" in tMyDir
+   set the itemDel to "/"
+   put item 1 to -2 of tMyDir into tMyDir
+   set the itemDel to comma
    try
       if "lib_sfx" is not among the lines of the stacksInUse then
-         put SEdit.Projects() & "/LIB_SFX/livecode/lib_sfx.livecodescript" into tLib
+         -- an installed copy: lib_sfx beside this file; on the owner's PC: projects/LIB_SFX
+         put tMyDir & "/lib_sfx.livecodescript" into tLib
+         if there is not a file tLib then put SEdit.Projects() & "/LIB_SFX/livecode/lib_sfx.livecodescript" into tLib
          if there is not a file tLib then return "no LIB_SFX (" & tLib & ")"
          start using stack tLib
       end if
-      Sfx.Start
+      -- the extension (xtsfx.dll): xtsfx/ beside this file when installed, else LIB_SFX's C:/xtsfx/extension
+      if there is a file (tMyDir & "/xtsfx/module.lcm") then put tMyDir & "/xtsfx" into tSfxDir
+      Sfx.Start tSfxDir
       if the result is not empty then return the result
    catch tErr
       return "LIB_SFX did not start:" && line 1 of tErr
