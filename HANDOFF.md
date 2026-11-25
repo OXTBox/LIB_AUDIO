@@ -112,5 +112,5 @@ Headless players have no media: a file "opens" when it is there. Only Windows ru
   `VL.Audio` (Library) and `CG.Audio` (Comfy) do it. Sound editor finds lib_sfx + xtsfx beside itself.
 - Tests: t85_seed (headless), t27 +1 (Library plays through the installed AUDIO), t84 47, t64, t81, t83 green.
 - **DONE 24 Nov 22:55:** owner rebuilt both exes; installed on V: (Vibecode3D.exe + ComfyGames.exe new;
-  the spare `Vibecode3D Library.exe` copy was running, still 23 Nov: install again once it is closed).
+  the spare `Vibecode3D Library.exe` copy replaced too once he closed it).
 - Traps: `tExt` = text, `tHere` = there (xTalk ignores case); Windows sees kit.txt = KIT.txt.
