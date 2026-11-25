@@ -1,0 +1,57 @@
+-- LIB_AUDIO with Comfy Games (24 Nov 2026, LIB_COMFY/AUDIO_HANDOFF.md): Refresh takes a list of
+-- folders; a game's words come from its own file, else its family's (trailing digits off), else
+-- the game it was remixed from (header); Save can write the whole family's file.
+local tP, tR, tPhoton, tWords, tF, tKit, tName, tBad
+put "/home/igame3d/projects" into tP
+put tP & "/LIB_AUDIO/tests/_root" into tR
+put tP & "/LIB_COMFY/games/Vibecode3D_Play_ComfyPhoton937801948.livecodescript" into tPhoton
+start using stack (tP & "/LIB_AUDIO/livecode/lib_audio.livecodescript")
+Audio.SetRoot tR
+if there is a folder (tR & "/Games") then delete folder (tR & "/Games")
+Audio.Build empty, 100
+Audio.Open
+Audio.Refresh tP & "/LIB_GAMES/Vibecode3D_Games" & return & tP & "/LIB_COMFY/games" & return & tP & "/no_such_folder"
+put ck("Refresh: a LIB_GAMES card", there is a card "Canyon" of stack "AUDIO", true) & return after tLog
+put ck("Refresh: a Comfy card", there is a card "ComfyPhoton937801948" of stack "AUDIO", true) & return after tLog
+put ck("Comfy card knows its script", the uScriptFile of card "ComfyPhoton937801948" of stack "AUDIO", tPhoton) & return after tLog
+put ck("Refresh one folder still works", the uScriptFile of card "Canyon" of stack "AUDIO" contains "LIB_GAMES", true) & return after tLog
+put ck("Family: seed off", Audio.Family("ComfyPhoton937801948"), "ComfyPhoton") & return after tLog
+put ck("Family: no digits", Audio.Family("Canyon"), "Canyon") & return after tLog
+put ck("Family: all digits keeps the name", Audio.Family("123"), "123") & return after tLog
+put ck("RemixSource: Photon Ball", Audio.RemixSource(tPhoton), "PhotonBall") & return after tLog
+put ck("RemixSource: a node game has none", Audio.RemixSource(tP & "/LIB_COMFY/games/Vibecode3D_Play_ComfyLander1.livecodescript"), empty) & return after tLog
+put ck("no saved words: from the script", Audio.WordsFile("ComfyPhoton937801948", tPhoton), empty) & return after tLog
+-- the remix source's words
+create folder (tR & "/Games")
+put textEncode("Explode" & tab & "Zap/" & tab & tab & 55 & return & "Music" & tab & "Music/" & tab & tab & 60 & return, "UTF-8") into URL ("binfile:" & tR & "/Games/PhotonBall.txt")
+put ck("uses PhotonBall.txt", Audio.WordsFile("ComfyPhoton937801948", tPhoton), tR & "/Games/PhotonBall.txt") & return after tLog
+put Audio.Words("ComfyPhoton937801948", tPhoton) into tWords
+put ck("its choice comes along", lineOffset("Explode" & tab & "Zap/" & tab & tab & 55, tWords) > 0, true) & return after tLog
+-- save for the whole family
+Audio.Select "ComfyPhoton937801948"
+Audio.UISave "family"
+put ck("Save family: ComfyPhoton.txt", there is a file (tR & "/Games/ComfyPhoton.txt"), true) & return after tLog
+put ck("... not the game's own", there is a file (tR & "/Games/ComfyPhoton937801948.txt"), false) & return after tLog
+put ck("another seed uses the family", Audio.WordsFile("ComfyPhoton542874626", tP & "/LIB_COMFY/games/Vibecode3D_Play_ComfyPhoton542874626.livecodescript"), tR & "/Games/ComfyPhoton.txt") & return after tLog
+put ck("family file kept Zap", lineOffset("Explode" & tab & "Zap/", textDecode(URL ("binfile:" & tR & "/Games/ComfyPhoton.txt"), "UTF-8")) > 0, true) & return after tLog
+Audio.UISave "game"
+put ck("Save game: its own file", there is a file (tR & "/Games/ComfyPhoton937801948.txt"), true) & return after tLog
+put ck("own file wins", Audio.WordsFile("ComfyPhoton937801948", tPhoton), tR & "/Games/ComfyPhoton937801948.txt") & return after tLog
+put ck("LIB_GAMES game: no borrowing", Audio.WordsFile("Canyon", empty), empty) & return after tLog
+-- the node parts call kit names only
+put "Blip,Bounce,Bullet,Enemy,Explode,Hit,Hurt,Jump,Lose,Pickup,PlayerCrash,PlayerLaser,Powerup,Select,Shoot,Throw,Thud,Warp,Win,Zap" into tKit
+repeat for each item tF in "cbrick,ccoil,cdodge,cland,cpong,crock,cwave"
+   put empty into tBad
+   repeat for each line tName in Audio.ScriptNames(tP & "/LIB_COMFY/parts/" & tF & "/core.part.livecodescript")
+      if tName is not among the items of tKit then put tName & " " after tBad
+   end repeat
+   put ck(tF & " has sounds", Audio.ScriptNames(tP & "/LIB_COMFY/parts/" & tF & "/core.part.livecodescript") is not empty, true) & return after tLog
+   put ck(tF & " only kit names", tBad, empty) & return after tLog
+end repeat
+repeat for each item tF in "PhotonBall,ComfyPhoton,ComfyPhoton937801948"
+   if there is a file (tR & "/Games/" & tF & ".txt") then delete file (tR & "/Games/" & tF & ".txt")
+end repeat
+delete folder (tR & "/Games")
+put ck("cleaned up", there is a folder (tR & "/Games"), false) & return after tLog
+Audio.Close
+return tLog
